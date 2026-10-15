@@ -319,95 +319,6 @@ input:focus {
   font-size: 14px;
 }
 
-.own {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.own .sub {
-  color: var(--text);
-}
-
-.chart {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.chart .bar {
-  fill: var(--bar);
-}
-
-.chart .bar.dim {
-  fill: var(--bar-dim);
-}
-
-.chart .axis {
-  stroke: var(--line);
-}
-
-.chart .tick {
-  fill: var(--muted);
-  font-size: 11px;
-}
-
-.chart .you-line {
-  stroke: var(--warn);
-  stroke-width: 2;
-  stroke-dasharray: 4 3;
-}
-
-.chart .you-label {
-  fill: var(--warn);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.lowest {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.lowest li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.lowest li:last-child {
-  border-bottom: 0;
-}
-
-.lowest .lender {
-  display: block;
-  font-weight: 600;
-}
-
-.lowest .product {
-  display: block;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.lowest .rate {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.tag {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 0 6px;
-  border-radius: 6px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 11px;
-}
-
 .note {
   margin: 10px 0 0;
   font-size: 12px;
@@ -416,15 +327,6 @@ input:focus {
 
 .share .primary {
   margin-top: 14px;
-}
-
-.share-age {
-  margin: 16px 0 0;
-}
-
-.optional {
-  font-weight: 400;
-  color: var(--muted);
 }
 
 .secondary {
@@ -443,19 +345,6 @@ footer {
   color: var(--muted);
 }
 
-.saved-banner {
-  display: block;
-  width: 100%;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  border: 1px solid var(--accent);
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 600;
-  text-align: left;
-}
-
 .script {
   margin: 12px 0 0;
   padding: 12px 14px;
@@ -464,20 +353,6 @@ footer {
   border-radius: 0 10px 10px 0;
   font-size: 14px;
   user-select: all;
-}
-
-.more {
-  margin: 0 0 18px;
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-}
-
-.more summary {
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 14px;
 }
 
 .notice {

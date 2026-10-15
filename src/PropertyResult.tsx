@@ -4,7 +4,6 @@ import type { Breakdown as BreakdownData, Comparison, LoanProfile } from "./comp
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
 import { NegotiationCard } from "./NegotiationCard";
-import { RateChart } from "./RateChart";
 import { Simulator } from "./Simulator";
 
 interface Props {
@@ -19,9 +18,7 @@ interface Props {
   onShareClick: () => void;
 }
 
-const LOWEST_SHOWN = 5;
-
-// Everything about one loan: market comparison, simulator, conditions, negotiation, cheapest lenders.
+// One loan: how it compares with the market, the simulator, what each condition costs, how to negotiate.
 export function PropertyResult({ lang, profile, comparison: c, breakdown, balanceEstimated, shared, crowd, minGroupSize, onShareClick }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const total = c.lenders.length;
@@ -82,8 +79,6 @@ export function PropertyResult({ lang, profile, comparison: c, breakdown, balanc
           </p>
         )}
 
-        <h3>{t("res.chart", { total })}</h3>
-        <RateChart rates={c.lenders.map((l) => l.rate)} yours={profile.rate} youLabel={t("res.chartYou")} />
         <p className="note">
           {balanceEstimated ? t("prop.estimateFromRepayment", { balance: aud(profile.balance) }) : t("prop.estimate")}
         </p>
@@ -93,41 +88,8 @@ export function PropertyResult({ lang, profile, comparison: c, breakdown, balanc
 
       <Breakdown lang={lang} profile={profile} data={breakdown} />
 
-      {c.ownLender && (
-        <section className="card own">
-          {c.overpayVsOwnLender > 0 ? (
-            <>
-              <p className="headline-sm">{t("res.own", { lender: c.ownLender.lender, rate: pct(c.ownLender.rate) })}</p>
-              <p className="sub">
-                {t("res.ownTip", { diff: pct(profile.rate - c.ownLender.rate), amount: aud(c.overpayVsOwnLender) })}
-              </p>
-            </>
-          ) : (
-            <p className="headline-sm">{t("res.ownFine", { lender: c.ownLender.lender })}</p>
-          )}
-        </section>
-      )}
-
       {c.overpayVsP10 > 0 && <NegotiationCard lang={lang} profile={profile} comparison={c} />}
 
-      <section className="card">
-        <h3>{t("res.lowest")}</h3>
-        <ol className="lowest">
-          {c.lenders.slice(0, LOWEST_SHOWN).map((l) => (
-            <li key={l.lender}>
-              <div>
-                <span className="lender">{l.lender}</span>
-                <span className="product">
-                  {l.product}
-                  {l.hasOffset && <span className="tag">{t("res.offset")}</span>}
-                </span>
-              </div>
-              <span className="rate">{pct(l.rate)}</span>
-            </li>
-          ))}
-        </ol>
-        <p className="note">{t("res.lowestNote")}</p>
-      </section>
     </>
   );
 }

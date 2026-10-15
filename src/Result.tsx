@@ -1,6 +1,7 @@
 import type { Comparison, LoanProfile } from "./compare";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
+import { NegotiationCard } from "./NegotiationCard";
 import { RateChart } from "./RateChart";
 import { ShareCard } from "./ShareCard";
 
@@ -8,12 +9,14 @@ interface Props {
   lang: Lang;
   profile: LoanProfile;
   comparison: Comparison;
+  savedId: string | null;
+  onSubmitted: (id: string) => void;
   onRestart: () => void;
 }
 
 const LOWEST_SHOWN = 5;
 
-export function Result({ lang, profile, comparison: c, onRestart }: Props) {
+export function Result({ lang, profile, comparison: c, savedId, onSubmitted, onRestart }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const total = c.lenders.length;
   const group = [
@@ -84,6 +87,8 @@ export function Result({ lang, profile, comparison: c, onRestart }: Props) {
         </section>
       )}
 
+      {c.overpayVsP10 > 0 && <NegotiationCard lang={lang} profile={profile} comparison={c} />}
+
       <section className="card">
         <h3>{t("res.lowest")}</h3>
         <ol className="lowest">
@@ -103,7 +108,7 @@ export function Result({ lang, profile, comparison: c, onRestart }: Props) {
         <p className="note">{t("res.lowestNote")}</p>
       </section>
 
-      <ShareCard lang={lang} profile={profile} />
+      <ShareCard lang={lang} profile={profile} savedId={savedId} onSubmitted={onSubmitted} />
 
       <button className="ghost" onClick={onRestart}>
         {t("res.again")}

@@ -23,6 +23,7 @@ create index submissions_ip_day_idx on public.submissions (ip_hash, submitted_on
 alter table public.submissions enable row level security;
 
 -- Aggregates for one comparison group, plus where `your_rate` sits in it.
+-- `broad` widens the group to purpose + rate type, used while the exact group is still small.
 create or replace function public.submission_stats(
   p_purpose text,
   p_repayment text,
@@ -35,24 +36,34 @@ language sql
 stable
 set search_path = public
 as $$
-  with grp as (
-    select rate, lender
+  with broad as (
+    select rate, lender, repayment, lvr_band
     from submissions
-    where purpose = p_purpose
-      and repayment = p_repayment
-      and rate_kind = p_rate_kind
-      and lvr_band = p_lvr_band
+    where purpose = p_purpose and rate_kind = p_rate_kind
+  ),
+  grp as (
+    select rate, lender from broad where repayment = p_repayment and lvr_band = p_lvr_band
   ),
   same_lender as (
     select rate from grp where p_lender is not null and lender = p_lender
   )
   select json_build_object(
-    'n', (select count(*) from grp),
-    'below', (select count(*) from grp where rate < p_your_rate),
-    'ties', (select count(*) from grp where rate = p_your_rate),
-    'p25', (select percentile_cont(0.25) within group (order by rate) from grp),
-    'median', (select percentile_cont(0.5) within group (order by rate) from grp),
-    'p75', (select percentile_cont(0.75) within group (order by rate) from grp),
+    'exact', json_build_object(
+      'n', (select count(*) from grp),
+      'below', (select count(*) from grp where rate < p_your_rate),
+      'ties', (select count(*) from grp where rate = p_your_rate),
+      'p25', (select percentile_cont(0.25) within group (order by rate) from grp),
+      'median', (select percentile_cont(0.5) within group (order by rate) from grp),
+      'p75', (select percentile_cont(0.75) within group (order by rate) from grp)
+    ),
+    'broad', json_build_object(
+      'n', (select count(*) from broad),
+      'below', (select count(*) from broad where rate < p_your_rate),
+      'ties', (select count(*) from broad where rate = p_your_rate),
+      'p25', (select percentile_cont(0.25) within group (order by rate) from broad),
+      'median', (select percentile_cont(0.5) within group (order by rate) from broad),
+      'p75', (select percentile_cont(0.75) within group (order by rate) from broad)
+    ),
     'lender_n', (select count(*) from same_lender),
     'lender_median', (select percentile_cont(0.5) within group (order by rate) from same_lender)
   );

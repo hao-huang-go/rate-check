@@ -110,7 +110,3 @@ export function compare(benchmark: Benchmark, profile: LoanProfile): Comparison 
     overpayVsOwnLender: ownLender ? annualOverpay(profile.rate, ownLender.rate, profile.balance) : 0,
   };
 }
-
-export function lenderNames(benchmark: Benchmark): string[] {
-  return [...new Set(benchmark.rows.map((r) => r.l))].sort((a, b) => a.localeCompare(b));
-}

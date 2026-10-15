@@ -32,15 +32,26 @@ interface StoredGroup {
 }
 
 export interface GroupStats {
-  n: number;
-  enough: boolean;
+  n: number; // size of the exact group
+  enough: boolean; // true when either the exact or the broad group can be shown
+  scope: "exact" | "broad" | null;
   minGroupSize: number;
-  // Present only when enough is true.
+  // Present only when enough is true, for the group named by scope.
+  shownN?: number;
   higherThanPct?: number; // share paying less than you, ties count half
   p25?: number;
   median?: number;
   p75?: number;
   lenderMedian?: number | null;
+}
+
+interface RawGroup {
+  n: number;
+  below: number;
+  ties: number;
+  p25: number | null;
+  median: number | null;
+  p75: number | null;
 }
 
 export class InputError extends Error {}
@@ -166,17 +177,24 @@ export async function groupStats(db: SupabaseClient, group: StoredGroup): Promis
   });
   if (error) throw error;
 
-  const n = Number(data.n);
-  if (n < MIN_GROUP_SIZE) return { n, enough: false, minGroupSize: MIN_GROUP_SIZE };
+  const exact = data.exact as RawGroup;
+  const broad = data.broad as RawGroup;
+  const n = Number(exact.n);
+  const scope = n >= MIN_GROUP_SIZE ? "exact" : Number(broad.n) >= MIN_GROUP_SIZE ? "broad" : null;
+  if (!scope) return { n, enough: false, scope: null, minGroupSize: MIN_GROUP_SIZE };
 
+  const shown = scope === "exact" ? exact : broad;
+  const shownN = Number(shown.n);
   return {
     n,
     enough: true,
+    scope,
     minGroupSize: MIN_GROUP_SIZE,
-    higherThanPct: (Number(data.below) + Number(data.ties) / 2) / n,
-    p25: Number(data.p25),
-    median: Number(data.median),
-    p75: Number(data.p75),
+    shownN,
+    higherThanPct: (Number(shown.below) + Number(shown.ties) / 2) / shownN,
+    p25: Number(shown.p25),
+    median: Number(shown.median),
+    p75: Number(shown.p75),
     lenderMedian: Number(data.lender_n) >= MIN_GROUP_SIZE ? Number(data.lender_median) : null,
   };
 }

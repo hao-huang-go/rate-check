@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { compare, lenderNames, type Benchmark, type LoanProfile } from "./compare";
+import { loadBenchmark, type LoadedBenchmark } from "./benchmark";
+import { compare, type LoanProfile } from "./compare";
 import { detectLang, translate, type Lang, type MessageKey } from "./i18n";
 import { LoanForm } from "./LoanForm";
 import { Result } from "./Result";
+import { loadSaved, sameProfile, saveSubmission, type SavedSubmission } from "./savedSubmission";
 
 export default function App() {
   const [lang, setLang] = useState<Lang>(detectLang);
-  const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
+  const [benchmark, setBenchmark] = useState<LoadedBenchmark | null>(null);
   const [profile, setProfile] = useState<LoanProfile | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [saved, setSaved] = useState<SavedSubmission | null>(loadSaved);
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
 
   useEffect(() => {
-    fetch("/benchmark.json")
-      .then((res) => res.json())
-      .then(setBenchmark);
+    loadBenchmark().then(setBenchmark);
   }, []);
 
   useEffect(() => {
@@ -22,7 +23,6 @@ export default function App() {
     document.title = translate(lang, "title");
   }, [lang]);
 
-  const lenders = useMemo(() => (benchmark ? lenderNames(benchmark) : []), [benchmark]);
   const comparison = useMemo(
     () => (benchmark && profile ? compare(benchmark, profile) : null),
     [benchmark, profile],
@@ -49,11 +49,23 @@ export default function App() {
       {!benchmark ? (
         <div className="card loading" />
       ) : showResult && profile && comparison ? (
-        <Result lang={lang} profile={profile} comparison={comparison} onRestart={() => setShowResult(false)} />
+        <Result
+          lang={lang}
+          profile={profile}
+          comparison={comparison}
+          savedId={saved && sameProfile(saved.profile, profile) ? saved.id : null}
+          onSubmitted={(id) => setSaved(saveSubmission(id, profile))}
+          onRestart={() => setShowResult(false)}
+        />
       ) : (
         <>
+          {saved && (
+            <button className="saved-banner" onClick={() => handleSubmit(saved.profile)}>
+              {t("saved.banner")} →
+            </button>
+          )}
           {showResult && profile && !comparison && <p className="error card">{t("noMatch")}</p>}
-          <LoanForm lang={lang} lenders={lenders} initial={profile} onSubmit={handleSubmit} />
+          <LoanForm lang={lang} lenders={benchmark.lenders} initial={profile} onSubmit={handleSubmit} />
         </>
       )}
 

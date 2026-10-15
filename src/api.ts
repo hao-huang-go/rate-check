@@ -4,7 +4,9 @@ import type { LoanProfile } from "./compare";
 export interface GroupStats {
   n: number;
   enough: boolean;
+  scope: "exact" | "broad" | null;
   minGroupSize: number;
+  shownN?: number;
   higherThanPct?: number;
   p25?: number;
   median?: number;

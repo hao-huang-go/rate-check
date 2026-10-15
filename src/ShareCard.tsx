@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiError, fetchStats, submitRate, type SubmissionResult } from "./api";
 import { LOAN_AGES, type LoanAge } from "./bands";
 import type { LoanProfile } from "./compare";
@@ -8,15 +8,30 @@ import { translate, type Lang, type MessageKey } from "./i18n";
 interface Props {
   lang: Lang;
   profile: LoanProfile;
+  savedId: string | null; // set when this exact profile was already submitted from this browser
+  onSubmitted: (id: string) => void;
 }
 
 type Status = "idle" | "busy" | "error" | "rate_limited";
 
-export function ShareCard({ lang, profile }: Props) {
+export function ShareCard({ lang, profile, savedId, onSubmitted }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const [loanAge, setLoanAge] = useState<LoanAge | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<SubmissionResult | null>(null);
+
+  useEffect(() => {
+    if (!savedId) return;
+    let cancelled = false;
+    fetchStats(savedId)
+      .then((r) => !cancelled && setResult(r))
+      .catch(() => {
+        // Fall back to the submit form; resubmitting is harmless.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [savedId]);
 
   async function run(action: () => Promise<SubmissionResult>) {
     setStatus("busy");
@@ -35,8 +50,11 @@ export function ShareCard({ lang, profile }: Props) {
         <h3>{t("crowd.title")}</h3>
         {s.enough ? (
           <>
+            {s.scope === "broad" && (
+              <p className="sub">{t("crowd.broad", { n: s.n, min: s.minGroupSize })}</p>
+            )}
             <p className="headline">
-              {t("crowd.rank", { n: s.n, pct: Math.round((s.higherThanPct ?? 0) * 100) })}
+              {t("crowd.rank", { n: s.shownN ?? s.n, pct: Math.round((s.higherThanPct ?? 0) * 100) })}
             </p>
             <div className="stats">
               <div>
@@ -103,7 +121,13 @@ export function ShareCard({ lang, profile }: Props) {
       <button
         className="primary"
         disabled={status === "busy"}
-        onClick={() => run(() => submitRate(profile, loanAge))}
+        onClick={() =>
+          run(async () => {
+            const r = await submitRate(profile, loanAge);
+            onSubmitted(r.id);
+            return r;
+          })
+        }
       >
         {status === "busy" ? t("share.busy") : t("share.submit")}
       </button>

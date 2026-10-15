@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { MAX_LVR } from "./bands";
+import type { Lender } from "./benchmark";
 import { lvrOf, type LoanProfile, type Purpose, type RateKind, type Repayment } from "./compare";
 import { groupAmount, parseAmount, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
 
 interface Props {
   lang: Lang;
-  lenders: string[];
+  lenders: Lender[];
   initial: LoanProfile | null;
   onSubmit: (profile: LoanProfile) => void;
 }
@@ -40,6 +41,16 @@ function Segmented<T extends string>({ label, value, options, onChange }: Segmen
       </div>
     </fieldset>
   );
+}
+
+// Accepts the English name, or any Chinese name/alias the user typed instead of picking.
+function resolveLender(lenders: Lender[], typed: string): string | null {
+  const q = typed.trim().toLowerCase();
+  if (!q) return null;
+  const exact = lenders.find((l) => l.name.toLowerCase() === q);
+  if (exact) return exact.name;
+  const alias = lenders.find((l) => l.zh && l.zh.split(" ").some((z) => z.toLowerCase() === q || z.includes(typed.trim())));
+  return alias?.name ?? null;
 }
 
 export function LoanForm({ lang, lenders, initial, onSubmit }: Props) {
@@ -78,7 +89,7 @@ export function LoanForm({ lang, lenders, initial, onSubmit }: Props) {
       rateKind,
       balance: balanceNum,
       propertyValue: valueNum,
-      lender: lenders.includes(lender) ? lender : null,
+      lender: resolveLender(lenders, lender),
       rate: rateNum,
     });
   }
@@ -149,7 +160,7 @@ export function LoanForm({ lang, lenders, initial, onSubmit }: Props) {
         />
         <datalist id="lenders">
           {lenders.map((l) => (
-            <option key={l} value={l} />
+            <option key={l.name} value={l.name} label={l.zh || undefined} />
           ))}
         </datalist>
       </label>

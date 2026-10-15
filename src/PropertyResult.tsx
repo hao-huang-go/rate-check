@@ -1,11 +1,10 @@
+import type { MetricStats } from "./api";
 import { Breakdown } from "./Breakdown";
 import type { Breakdown as BreakdownData, Comparison, LoanProfile } from "./compare";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
-import { FeedbackCard } from "./FeedbackCard";
 import { NegotiationCard } from "./NegotiationCard";
 import { RateChart } from "./RateChart";
-import { ShareCard } from "./ShareCard";
 import { Simulator } from "./Simulator";
 
 interface Props {
@@ -13,14 +12,17 @@ interface Props {
   profile: LoanProfile;
   comparison: Comparison;
   breakdown: BreakdownData;
-  savedId: string | null;
-  onSubmitted: (id: string) => void;
-  onRestart: () => void;
+  balanceEstimated: boolean;
+  shared: boolean;
+  crowd: MetricStats | null; // real participants with the same purpose and rate type
+  minGroupSize: number;
+  onShareClick: () => void;
 }
 
 const LOWEST_SHOWN = 5;
 
-export function Result({ lang, profile, comparison: c, breakdown, savedId, onSubmitted, onRestart }: Props) {
+// Everything about one loan: market comparison, simulator, conditions, negotiation, cheapest lenders.
+export function PropertyResult({ lang, profile, comparison: c, breakdown, balanceEstimated, shared, crowd, minGroupSize, onShareClick }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const total = c.lenders.length;
   const group = [
@@ -29,19 +31,16 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
     profile.rateKind === "V" ? t("rateKind.V") : t("rateKind.F", { n: profile.rateKind.slice(1) }),
     `LVR ${pct(c.lvr, 0)}`,
     profile.residency !== "pr" ? t(`residency.${profile.residency}`) : null,
-    profile.income === "self" ? t("income.self") : null,
-    profile.firstHome ? t("firstHome") : null,
-    profile.needOffset ? "offset" : null,
   ]
     .filter(Boolean)
     .join(" · ");
 
+  const crowdReady = crowd && crowd.below !== undefined && crowd.ties !== undefined && crowd.n >= minGroupSize;
+
   return (
-    <div className="result">
+    <>
       {profile.residency !== "pr" && (
-        <p className="card notice">
-          {profile.residency === "visa" ? t("res.visaNote", { n: total }) : t("res.overseasNote")}
-        </p>
+        <p className="card notice">{profile.residency === "visa" ? t("res.visaNote", { n: total }) : t("res.overseasNote")}</p>
       )}
 
       <section className="card">
@@ -62,9 +61,7 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
         </div>
 
         <p className="headline">
-          {c.cheaperCount > 0
-            ? t("res.cheaper", { n: c.cheaperCount, total })
-            : t("res.cheaperNone", { total })}
+          {c.cheaperCount > 0 ? t("res.cheaper", { n: c.cheaperCount, total }) : t("res.cheaperNone", { total })}
         </p>
 
         {c.overpayVsMedian > 0 && (
@@ -73,25 +70,26 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
             <strong>{t("perYear", { amount: aud(c.overpayVsMedian) })}</strong>
           </div>
         )}
-        {c.overpayVsP10 > 0 && (
-          <p className="sub">
-            {t("res.overpayBest")} <b>{t("perYear", { amount: aud(c.overpayVsP10) })}</b>
+
+        {shared && crowd && (
+          <p className="crowd-line">
+            {crowdReady
+              ? t("prop.crowd", {
+                  n: crowd.n,
+                  pct: Math.round(((crowd.n - crowd.below! - crowd.ties! / 2) / crowd.n) * 100),
+                })
+              : t("prop.crowdWaiting", { n: crowd.n, min: minGroupSize })}
           </p>
         )}
 
         <h3>{t("res.chart", { total })}</h3>
         <RateChart rates={c.lenders.map((l) => l.rate)} yours={profile.rate} youLabel={t("res.chartYou")} />
+        <p className="note">
+          {balanceEstimated ? t("prop.estimateFromRepayment", { balance: aud(profile.balance) }) : t("prop.estimate")}
+        </p>
       </section>
 
-      <ShareCard lang={lang} profile={profile} savedId={savedId} onSubmitted={onSubmitted} />
-
-      <Simulator
-        lang={lang}
-        profile={profile}
-        comparison={c}
-        unlocked={savedId !== null}
-        onUnlockClick={() => document.getElementById("share")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-      />
+      <Simulator lang={lang} profile={profile} comparison={c} unlocked={shared} onUnlockClick={onShareClick} />
 
       <Breakdown lang={lang} profile={profile} data={breakdown} />
 
@@ -99,14 +97,9 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
         <section className="card own">
           {c.overpayVsOwnLender > 0 ? (
             <>
-              <p className="headline-sm">
-                {t("res.own", { lender: c.ownLender.lender, rate: pct(c.ownLender.rate) })}
-              </p>
+              <p className="headline-sm">{t("res.own", { lender: c.ownLender.lender, rate: pct(c.ownLender.rate) })}</p>
               <p className="sub">
-                {t("res.ownTip", {
-                  diff: pct(profile.rate - c.ownLender.rate),
-                  amount: aud(c.overpayVsOwnLender),
-                })}
+                {t("res.ownTip", { diff: pct(profile.rate - c.ownLender.rate), amount: aud(c.overpayVsOwnLender) })}
               </p>
             </>
           ) : (
@@ -135,22 +128,6 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
         </ol>
         <p className="note">{t("res.lowestNote")}</p>
       </section>
-
-      <FeedbackCard lang={lang} page="result" startOpen={true} />
-
-      <section className="card coffee">
-        <div>
-          <h3>{t("coffee.title")}</h3>
-          <p className="sub">{t("coffee.body")}</p>
-        </div>
-        <a className="secondary" href="https://buymeacoffee.com/tyah0510" target="_blank" rel="noopener noreferrer">
-          {t("coffee.button")}
-        </a>
-      </section>
-
-      <button className="ghost" onClick={onRestart}>
-        {t("res.again")}
-      </button>
-    </div>
+    </>
   );
 }

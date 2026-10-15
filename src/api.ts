@@ -1,18 +1,4 @@
-import type { LoanAge } from "./bands";
-import type { LoanProfile } from "./compare";
-
-export interface GroupStats {
-  n: number;
-  enough: boolean;
-  scope: "exact" | "broad" | null;
-  minGroupSize: number;
-  shownN?: number;
-  higherThanPct?: number;
-  p25?: number;
-  median?: number;
-  p75?: number;
-  lenderMedian?: number | null;
-}
+import type { Household } from "./household";
 
 export type NegotiationMethod = "asked" | "named_rate" | "discharge" | "refinanced";
 
@@ -48,11 +34,6 @@ export interface FeedbackInput {
   page: "form" | "result";
 }
 
-export interface SubmissionResult {
-  id: string;
-  stats: GroupStats;
-}
-
 export class ApiError extends Error {
   readonly code: string;
 
@@ -60,25 +41,6 @@ export class ApiError extends Error {
     super(code);
     this.code = code;
   }
-}
-
-async function parse(res: Response): Promise<SubmissionResult> {
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(body.error ?? "server");
-  return body as SubmissionResult;
-}
-
-export async function submitRate(profile: LoanProfile, loanAge: LoanAge | null): Promise<SubmissionResult> {
-  const res = await fetch("/api/submit", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...profile, loanAge }),
-  });
-  return parse(res);
-}
-
-export async function fetchStats(id: string): Promise<SubmissionResult> {
-  return parse(await fetch(`/api/stats?id=${encodeURIComponent(id)}`));
 }
 
 async function json<T>(res: Response): Promise<T> {
@@ -109,4 +71,41 @@ export async function sendFeedback(input: FeedbackInput): Promise<void> {
       body: JSON.stringify(input),
     }),
   );
+}
+
+export interface MetricStats {
+  n: number;
+  below?: number;
+  ties?: number;
+  p25?: number;
+  p50?: number;
+  p75?: number;
+  lo?: number;
+  hi?: number;
+  hist?: number[];
+}
+
+export interface HouseholdStats {
+  minGroupSize: number;
+  cohorts: Record<"all" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
+  rates: { position: number; stats: MetricStats }[];
+}
+
+export interface HouseholdResult {
+  id: string;
+  stats: HouseholdStats;
+}
+
+export async function submitHousehold(household: Household): Promise<HouseholdResult> {
+  return json(
+    await fetch("/api/household", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(household),
+    }),
+  );
+}
+
+export async function fetchHouseholdStats(id: string): Promise<HouseholdResult> {
+  return json(await fetch(`/api/household?id=${encodeURIComponent(id)}`));
 }

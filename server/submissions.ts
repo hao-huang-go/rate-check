@@ -74,23 +74,28 @@ export function parseSubmission(body: unknown): SubmissionInput {
   if (b.balance / b.propertyValue > MAX_LVR) throw new InputError("lvr");
   if (!finiteBetween(b.rate, 0.02, 0.15)) throw new InputError("rate");
 
-  const lender = b.lender === null || b.lender === undefined || b.lender === "" ? null : b.lender;
-  if (lender !== null && (typeof lender !== "string" || !LENDER_PATTERN.test(lender))) {
-    throw new InputError("lender");
-  }
-  const loanAge = b.loanAge === null || b.loanAge === undefined ? null : b.loanAge;
-  if (loanAge !== null && !oneOf(LOAN_AGES, loanAge)) throw new InputError("loanAge");
-
   return {
     purpose: b.purpose,
     repayment: b.repayment,
     rateKind: b.rateKind,
     balance: b.balance,
     propertyValue: b.propertyValue,
-    lender,
+    lender: parseLender(b.lender),
     rate: Math.round(b.rate * 100_000) / 100_000,
-    loanAge,
+    loanAge: parseLoanAge(b.loanAge),
   };
+}
+
+function parseLender(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string" || !LENDER_PATTERN.test(value)) throw new InputError("lender");
+  return value;
+}
+
+function parseLoanAge(value: unknown): LoanAge | null {
+  if (value === null || value === undefined) return null;
+  if (!oneOf(LOAN_AGES, value)) throw new InputError("loanAge");
+  return value;
 }
 
 export function parseSubmissionId(id: string | null): string {

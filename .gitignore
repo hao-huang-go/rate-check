@@ -25,3 +25,4 @@ dist-ssr
 
 # raw CDR pull; public/benchmark.json is the shipped artifact
 data/
+.vercel

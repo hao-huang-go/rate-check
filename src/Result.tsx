@@ -6,6 +6,7 @@ import { FeedbackCard } from "./FeedbackCard";
 import { NegotiationCard } from "./NegotiationCard";
 import { RateChart } from "./RateChart";
 import { ShareCard } from "./ShareCard";
+import { Simulator } from "./Simulator";
 
 interface Props {
   lang: Lang;
@@ -82,6 +83,16 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
         <RateChart rates={c.lenders.map((l) => l.rate)} yours={profile.rate} youLabel={t("res.chartYou")} />
       </section>
 
+      <ShareCard lang={lang} profile={profile} savedId={savedId} onSubmitted={onSubmitted} />
+
+      <Simulator
+        lang={lang}
+        profile={profile}
+        comparison={c}
+        unlocked={savedId !== null}
+        onUnlockClick={() => document.getElementById("share")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+      />
+
       <Breakdown lang={lang} profile={profile} data={breakdown} />
 
       {c.ownLender && (
@@ -124,8 +135,6 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
         </ol>
         <p className="note">{t("res.lowestNote")}</p>
       </section>
-
-      <ShareCard lang={lang} profile={profile} savedId={savedId} onSubmitted={onSubmitted} />
 
       <FeedbackCard lang={lang} page="result" startOpen={true} />
 

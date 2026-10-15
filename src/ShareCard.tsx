@@ -46,7 +46,7 @@ export function ShareCard({ lang, profile, savedId, onSubmitted }: Props) {
   if (result) {
     const s = result.stats;
     return (
-      <section className="card share">
+      <section className="card share" id="share">
         <h3>{t("crowd.title")}</h3>
         {s.enough ? (
           <>
@@ -94,7 +94,7 @@ export function ShareCard({ lang, profile, savedId, onSubmitted }: Props) {
   }
 
   return (
-    <section className="card share">
+    <section className="card share" id="share">
       <h3>{t("share.title")}</h3>
       <p className="sub">{t("share.body")}</p>
       <fieldset className="field share-age">

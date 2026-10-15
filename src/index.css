@@ -666,3 +666,59 @@ textarea:focus {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.sim-teaser {
+  margin: 4px 0 16px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sim.locked {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.sim-presets {
+  margin: 8px 0 14px;
+}
+
+.sim-slider span b {
+  color: var(--accent);
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+}
+
+.sim-stats {
+  margin-top: 4px;
+}
+
+.sim-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sim-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.sim-refi {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}

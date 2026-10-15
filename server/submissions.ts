@@ -1,0 +1,182 @@
+import { createHash } from "node:crypto";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { balanceBand, LOAN_AGES, lvrBand, MAX_LVR, type LoanAge, type LvrBand } from "../src/bands.js";
+
+const PURPOSES = ["OO", "INV"] as const;
+const REPAYMENTS = ["PI", "IO"] as const;
+const RATE_KINDS = ["V", "F1", "F2", "F3", "F4", "F5"] as const;
+const MAX_SUBMISSIONS_PER_DAY = 5;
+// Below this many people in a group, percentiles would be noise and could single someone out.
+export const MIN_GROUP_SIZE = 5;
+const LENDER_PATTERN = /^[\p{L}\p{N} .,&'()\-/]{1,80}$/u;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface SubmissionInput {
+  purpose: (typeof PURPOSES)[number];
+  repayment: (typeof REPAYMENTS)[number];
+  rateKind: (typeof RATE_KINDS)[number];
+  balance: number;
+  propertyValue: number;
+  lender: string | null;
+  rate: number;
+  loanAge: LoanAge | null;
+}
+
+interface StoredGroup {
+  purpose: string;
+  repayment: string;
+  rate_kind: string;
+  lvr_band: LvrBand;
+  lender: string | null;
+  rate: number;
+}
+
+export interface GroupStats {
+  n: number;
+  enough: boolean;
+  minGroupSize: number;
+  // Present only when enough is true.
+  higherThanPct?: number; // share paying less than you, ties count half
+  p25?: number;
+  median?: number;
+  p75?: number;
+  lenderMedian?: number | null;
+}
+
+export class InputError extends Error {}
+
+const oneOf = <T extends string>(options: readonly T[], value: unknown): value is T =>
+  typeof value === "string" && (options as readonly string[]).includes(value);
+
+const finiteBetween = (value: unknown, min: number, max: number): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+
+export function parseSubmission(body: unknown): SubmissionInput {
+  if (typeof body !== "object" || body === null) throw new InputError("body");
+  const b = body as Record<string, unknown>;
+
+  if (!oneOf(PURPOSES, b.purpose)) throw new InputError("purpose");
+  if (!oneOf(REPAYMENTS, b.repayment)) throw new InputError("repayment");
+  if (!oneOf(RATE_KINDS, b.rateKind)) throw new InputError("rateKind");
+  if (!finiteBetween(b.balance, 10_000, 20_000_000)) throw new InputError("balance");
+  if (!finiteBetween(b.propertyValue, 10_000, 50_000_000)) throw new InputError("propertyValue");
+  if (b.balance / b.propertyValue > MAX_LVR) throw new InputError("lvr");
+  if (!finiteBetween(b.rate, 0.02, 0.15)) throw new InputError("rate");
+
+  const lender = b.lender === null || b.lender === undefined || b.lender === "" ? null : b.lender;
+  if (lender !== null && (typeof lender !== "string" || !LENDER_PATTERN.test(lender))) {
+    throw new InputError("lender");
+  }
+  const loanAge = b.loanAge === null || b.loanAge === undefined ? null : b.loanAge;
+  if (loanAge !== null && !oneOf(LOAN_AGES, loanAge)) throw new InputError("loanAge");
+
+  return {
+    purpose: b.purpose,
+    repayment: b.repayment,
+    rateKind: b.rateKind,
+    balance: b.balance,
+    propertyValue: b.propertyValue,
+    lender,
+    rate: Math.round(b.rate * 100_000) / 100_000,
+    loanAge,
+  };
+}
+
+export function parseSubmissionId(id: string | null): string {
+  if (!id || !UUID_PATTERN.test(id)) throw new InputError("id");
+  return id;
+}
+
+export function hashIp(ip: string, salt: string, day: string): string {
+  return createHash("sha256").update(`${salt}|${day}|${ip}`).digest("hex");
+}
+
+export function clientIp(request: Request): string {
+  return (
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
+}
+
+export function supabaseFromEnv(): SupabaseClient {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_SECRET_KEY must be set");
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
+export class RateLimitError extends Error {}
+
+export async function insertSubmission(
+  db: SupabaseClient,
+  input: SubmissionInput,
+  ipHash: string,
+  day: string,
+): Promise<string> {
+  const { count, error: countError } = await db
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_hash", ipHash)
+    .eq("submitted_on", day);
+  if (countError) throw countError;
+  if ((count ?? 0) >= MAX_SUBMISSIONS_PER_DAY) throw new RateLimitError();
+
+  const band = lvrBand(input.balance / input.propertyValue);
+  if (!band) throw new InputError("lvr");
+
+  const { data, error } = await db
+    .from("submissions")
+    .insert({
+      purpose: input.purpose,
+      repayment: input.repayment,
+      rate_kind: input.rateKind,
+      lvr_band: band,
+      balance_band: balanceBand(input.balance),
+      loan_age: input.loanAge,
+      lender: input.lender,
+      rate: input.rate,
+      ip_hash: ipHash,
+      submitted_on: day,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function getSubmissionGroup(db: SupabaseClient, id: string): Promise<StoredGroup | null> {
+  const { data, error } = await db
+    .from("submissions")
+    .select("purpose, repayment, rate_kind, lvr_band, lender, rate")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? { ...data, rate: Number(data.rate) } : null;
+}
+
+export async function groupStats(db: SupabaseClient, group: StoredGroup): Promise<GroupStats> {
+  const { data, error } = await db.rpc("submission_stats", {
+    p_purpose: group.purpose,
+    p_repayment: group.repayment,
+    p_rate_kind: group.rate_kind,
+    p_lvr_band: group.lvr_band,
+    p_lender: group.lender,
+    p_your_rate: group.rate,
+  });
+  if (error) throw error;
+
+  const n = Number(data.n);
+  if (n < MIN_GROUP_SIZE) return { n, enough: false, minGroupSize: MIN_GROUP_SIZE };
+
+  return {
+    n,
+    enough: true,
+    minGroupSize: MIN_GROUP_SIZE,
+    higherThanPct: (Number(data.below) + Number(data.ties) / 2) / n,
+    p25: Number(data.p25),
+    median: Number(data.median),
+    p75: Number(data.p75),
+    lenderMedian: Number(data.lender_n) >= MIN_GROUP_SIZE ? Number(data.lender_median) : null,
+  };
+}

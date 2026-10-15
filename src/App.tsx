@@ -1,0 +1,65 @@
+import { useEffect, useMemo, useState } from "react";
+import { compare, lenderNames, type Benchmark, type LoanProfile } from "./compare";
+import { detectLang, translate, type Lang, type MessageKey } from "./i18n";
+import { LoanForm } from "./LoanForm";
+import { Result } from "./Result";
+
+export default function App() {
+  const [lang, setLang] = useState<Lang>(detectLang);
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
+  const [profile, setProfile] = useState<LoanProfile | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
+
+  useEffect(() => {
+    fetch("/benchmark.json")
+      .then((res) => res.json())
+      .then(setBenchmark);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en-AU";
+    document.title = translate(lang, "title");
+  }, [lang]);
+
+  const lenders = useMemo(() => (benchmark ? lenderNames(benchmark) : []), [benchmark]);
+  const comparison = useMemo(
+    () => (benchmark && profile ? compare(benchmark, profile) : null),
+    [benchmark, profile],
+  );
+
+  function handleSubmit(next: LoanProfile) {
+    setProfile(next);
+    setShowResult(true);
+    window.scrollTo({ top: 0 });
+  }
+
+  return (
+    <main>
+      <header>
+        <div>
+          <h1>{t("title")}</h1>
+          <p className="subtitle">{t("subtitle")}</p>
+        </div>
+        <button className="lang" onClick={() => setLang(lang === "zh" ? "en" : "zh")}>
+          {t("langToggle")}
+        </button>
+      </header>
+
+      {!benchmark ? (
+        <div className="card loading" />
+      ) : showResult && profile && comparison ? (
+        <Result lang={lang} profile={profile} comparison={comparison} onRestart={() => setShowResult(false)} />
+      ) : (
+        <>
+          {showResult && profile && !comparison && <p className="error card">{t("noMatch")}</p>}
+          <LoanForm lang={lang} lenders={lenders} initial={profile} onSubmit={handleSubmit} />
+        </>
+      )}
+
+      {benchmark && (
+        <footer>{t("footer", { date: new Date(benchmark.fetchedAt).toLocaleDateString("en-AU") })}</footer>
+      )}
+    </main>
+  );
+}

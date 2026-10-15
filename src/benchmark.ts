@@ -1,4 +1,4 @@
-import type { WireBenchmark } from "./benchmarkWire";
+import { BENCHMARK_FORMAT, type WireBenchmark } from "./benchmarkWire";
 import type { Benchmark, BenchmarkRow, Purpose, Repayment } from "./compare";
 
 export interface Lender {
@@ -17,7 +17,7 @@ export function decodeBenchmark(wire: WireBenchmark): LoadedBenchmark {
   const lenders = wire.lenders.map(([name, zh]) => ({ name, zh }));
   const rows: BenchmarkRow[] = wire.rows.map(
     ([product, purpose, repayment, kind, lvrMin, lvrMax, amountMin, amountMax, rate]) => {
-      const [lender, name, offset] = wire.products[product];
+      const [lender, name, offset, flags] = wire.products[product];
       return {
         l: lenders[lender].name,
         p: name,
@@ -28,6 +28,7 @@ export function decodeBenchmark(wire: WireBenchmark): LoadedBenchmark {
         a: [amountMin, amountMax < 0 ? null : amountMax],
         rate: rate / 1e5,
         o: offset === 1,
+        f: flags ?? 0,
       };
     },
   );
@@ -39,7 +40,8 @@ export function decodeBenchmark(wire: WireBenchmark): LoadedBenchmark {
 // the page working if that's unavailable (local dev without Supabase, a storage outage).
 export async function loadBenchmark(): Promise<LoadedBenchmark> {
   try {
-    const res = await fetch("/api/benchmark");
+    // The format version in the URL keeps caches from serving an older format after a bump.
+    const res = await fetch(`/api/benchmark?format=${BENCHMARK_FORMAT}`);
     if (res.ok) return decodeBenchmark(await res.json());
   } catch {
     // fall through to the static copy

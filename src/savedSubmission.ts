@@ -3,6 +3,13 @@ import type { LoanProfile } from "./compare";
 // Kept only in this browser so a borrower can come back and see their group fill up.
 const KEY = "rate-check.submission.v1";
 
+const PROFILE_DEFAULTS: Pick<LoanProfile, "residency" | "income" | "firstHome" | "needOffset"> = {
+  residency: "pr",
+  income: "payg",
+  firstHome: false,
+  needOffset: false,
+};
+
 export interface SavedSubmission {
   id: string;
   profile: LoanProfile;
@@ -12,7 +19,11 @@ export interface SavedSubmission {
 export function loadSaved(): SavedSubmission | null {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as SavedSubmission) : null;
+    if (!raw) return null;
+    // Saved before borrower-profile fields existed, so those may be missing.
+    const saved = JSON.parse(raw) as Omit<SavedSubmission, "profile"> & { profile: Partial<LoanProfile> };
+    const profile = { ...PROFILE_DEFAULTS, ...saved.profile } as LoanProfile;
+    return { ...saved, profile };
   } catch {
     return null;
   }

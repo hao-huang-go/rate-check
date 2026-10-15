@@ -25,6 +25,9 @@ export interface RawRateRow {
   comparisonRate: number | null;
   hasOffset: boolean;
   annualFee: number;
+  // Free text from the product's CDR eligibility list, classified in server/benchmark.ts.
+  residencyText: string;
+  employmentText: string;
 }
 
 export interface BrandResult {
@@ -55,9 +58,9 @@ type Json = any;
 
 async function getJsonOnce(url: string, headers: Record<string, string>): Promise<Json> {
   const res = await fetch(url, {
-    // Westpac answers 200 with an empty product list when the request offers gzip
-    // (Node's default), so ask for uncompressed responses everywhere.
-    headers: { accept: "application/json", "accept-encoding": "identity", ...headers },
+    // No explicit `accept: application/json`: Westpac answers that (from Node) with
+    // 200 and an empty product list. The default `*/*` gets JSON from every holder.
+    headers,
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new HttpError(res.status, url);
@@ -136,7 +139,16 @@ const isAmountTier = (t: Json) => t.unitOfMeasure === "DOLLAR";
 // Some lenders publish LVR as 80 rather than 0.80.
 const asFraction = (v: number | null) => (v !== null && v > 1 ? v / 100 : v);
 
+function eligibilityText(detail: Json, type: string): string {
+  return (detail.eligibility ?? [])
+    .filter((e: Json) => e.eligibilityType === type)
+    .map((e: Json) => [e.additionalValue, e.additionalInfo].filter(Boolean).join(" "))
+    .join(" | ");
+}
+
 function normalise(brand: string, detail: Json): RawRateRow[] {
+  const residencyText = eligibilityText(detail, "RESIDENCY_STATUS");
+  const employmentText = eligibilityText(detail, "EMPLOYMENT_STATUS");
   const hasOffset = (detail.features ?? []).some((f: Json) => f.featureType === "OFFSET");
   const annualFee = (detail.fees ?? [])
     .filter((f: Json) => f.feeType === "PERIODIC" && /P1Y|P12M/.test(f.additionalValue ?? ""))
@@ -163,6 +175,8 @@ function normalise(brand: string, detail: Json): RawRateRow[] {
         comparisonRate: r.comparisonRate ? Number(r.comparisonRate) : null,
         hasOffset,
         annualFee,
+        residencyText,
+        employmentText,
       };
     });
 }

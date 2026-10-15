@@ -1,12 +1,33 @@
 // Turns a raw CDR pull into the compact benchmark the app compares against.
 // Keeps only rates an ordinary new borrower could actually apply for.
 import type { RateKind } from "../src/compare.js";
-import type { WireBenchmark, WireRow } from "../src/benchmarkWire.js";
+import { BENCHMARK_FORMAT, PRODUCT_FLAGS, type WireBenchmark, type WireRow } from "../src/benchmarkWire.js";
 import type { RawRateRow } from "./cdr.js";
 
 // Eligibility-restricted, purpose-restricted, or temporary rates.
 const RESTRICTED =
-  /staff|employee|veteran|defen[cs]e|military|police|fire ?(fighter|service)|essential worker|nurse|green|\beco\b|sustainab|clean energy|solar|energy efficien|fee assistance|bridging|construction|land loan|reverse|equity release|intro|honeymoon|first home|\bfhb\b|special offer|guarantor|family pledge/i;
+  /staff|employee|veteran|defen[cs]e|military|police|fire ?(fighter|service)|essential worker|nurse|green|\beco\b|sustainab|clean energy|solar|energy efficien|fee assistance|bridging|construction|land loan|reverse|equity release|intro|honeymoon|special offer|guarantor|family pledge/i;
+
+// Alt/low doc loans serve borrowers who can't document income; a different market.
+const LOW_DOC = /low ?doc|alt ?doc/i;
+const FIRST_HOME = /first home|\bfhb\b/i;
+const VISA_OK = /\bvisa\b|temporary resident|overseas|non-?resident(?!s?\.)|expat/i;
+const NOT_FOR_NON_RESIDENTS = /not available for non-?residents/i;
+const PR_ONLY = /citizen|permanent/i;
+const PAYG_ONLY = /payg/i;
+const SELF_EMPLOYED_OK = /self.?employ/i;
+
+function productFlags(row: RawRateRow): number {
+  let flags = 0;
+  const residency = row.residencyText;
+  if (VISA_OK.test(residency) && !NOT_FOR_NON_RESIDENTS.test(residency)) flags |= PRODUCT_FLAGS.VISA_OK;
+  else if (PR_ONLY.test(residency)) flags |= PRODUCT_FLAGS.PR_ONLY;
+  if (PAYG_ONLY.test(row.employmentText) && !SELF_EMPLOYED_OK.test(row.employmentText)) {
+    flags |= PRODUCT_FLAGS.PAYG_ONLY;
+  }
+  if (FIRST_HOME.test(row.productName)) flags |= PRODUCT_FLAGS.FHB_ONLY;
+  return flags;
+}
 
 // Below this is a data-entry error or a fee-assistance sub-loan, not a market rate.
 const MIN_PLAUSIBLE_RATE = 0.04;
@@ -63,7 +84,7 @@ function rateKind(row: RawRateRow): RateKind | null {
 
 function keep(row: RawRateRow): boolean {
   if (row.rate < MIN_PLAUSIBLE_RATE || row.rate > MAX_PLAUSIBLE_RATE) return false;
-  if (RESTRICTED.test(row.productName)) return false;
+  if (RESTRICTED.test(row.productName) || LOW_DOC.test(row.productName)) return false;
   if (row.purpose === "UNCONSTRAINED" || row.repayment === "UNCONSTRAINED") return false;
   // A fixed product's VARIABLE row is the revert rate after the fixed period ends.
   if (row.rateType === "VARIABLE" && /fixed/i.test(row.productName)) return false;
@@ -73,7 +94,7 @@ function keep(row: RawRateRow): boolean {
 export function buildBenchmark(rows: RawRateRow[], fetchedAt: string): WireBenchmark {
   const lenders: [string, string][] = [];
   const lenderIndex = new Map<string, number>();
-  const products: [number, string, 0 | 1][] = [];
+  const products: [number, string, 0 | 1, number][] = [];
   const productIndex = new Map<string, number>();
   const encoded = new Map<string, WireRow>();
 
@@ -83,10 +104,11 @@ export function buildBenchmark(rows: RawRateRow[], fetchedAt: string): WireBench
       lenderIndex.set(name, lenders.length);
       lenders.push([name, zh]);
     }
-    const productKey = `${name}\u0000${r.productName}\u0000${r.hasOffset}`;
+    const flags = productFlags(r);
+    const productKey = `${name}\u0000${r.productName}\u0000${r.hasOffset}\u0000${flags}`;
     if (!productIndex.has(productKey)) {
       productIndex.set(productKey, products.length);
-      products.push([lenderIndex.get(name)!, r.productName.trim(), r.hasOffset ? 1 : 0]);
+      products.push([lenderIndex.get(name)!, r.productName.trim(), r.hasOffset ? 1 : 0, flags]);
     }
     const row: WireRow = [
       productIndex.get(productKey)!,
@@ -110,5 +132,5 @@ export function buildBenchmark(rows: RawRateRow[], fetchedAt: string): WireBench
     );
   }
 
-  return { v: 2, fetchedAt, lenders, products, rows: [...encoded.values()] };
+  return { v: BENCHMARK_FORMAT, fetchedAt, lenders, products, rows: [...encoded.values()] };
 }

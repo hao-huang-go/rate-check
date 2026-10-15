@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { MAX_LVR } from "./bands";
 import type { Lender } from "./benchmark";
-import { lvrOf, type LoanProfile, type Purpose, type RateKind, type Repayment } from "./compare";
+import {
+  lvrOf,
+  type Income,
+  type LoanProfile,
+  type Purpose,
+  type RateKind,
+  type Repayment,
+  type Residency,
+} from "./compare";
 import { groupAmount, parseAmount, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
 
@@ -65,6 +73,10 @@ export function LoanForm({ lang, lenders, initial, onSubmit }: Props) {
   );
   const [lender, setLender] = useState(initial?.lender ?? "");
   const [rate, setRate] = useState(initial ? (initial.rate * 100).toFixed(2) : "");
+  const [residency, setResidency] = useState<Residency>(initial?.residency ?? "pr");
+  const [income, setIncome] = useState<Income>(initial?.income ?? "payg");
+  const [firstHome, setFirstHome] = useState(initial?.firstHome ?? false);
+  const [needOffset, setNeedOffset] = useState(initial?.needOffset ?? false);
   const [error, setError] = useState<string | null>(null);
 
   const balanceNum = parseAmount(balance);
@@ -91,11 +103,25 @@ export function LoanForm({ lang, lenders, initial, onSubmit }: Props) {
       propertyValue: valueNum,
       lender: resolveLender(lenders, lender),
       rate: rateNum,
+      residency,
+      income,
+      firstHome,
+      needOffset,
     });
   }
 
   return (
     <form className="card form" onSubmit={submit} noValidate>
+      <Segmented
+        label={t("residency")}
+        value={residency}
+        onChange={setResidency}
+        options={[
+          { value: "pr", label: t("residency.pr") },
+          { value: "visa", label: t("residency.visa") },
+          { value: "overseas", label: t("residency.overseas") },
+        ]}
+      />
       <Segmented
         label={t("purpose")}
         value={purpose}
@@ -176,6 +202,37 @@ export function LoanForm({ lang, lenders, initial, onSubmit }: Props) {
           />
         </div>
       </label>
+
+      <details className="more" open={income === "self" || firstHome || needOffset}>
+        <summary>{t("more.title")}</summary>
+        <Segmented
+          label={t("income")}
+          value={income}
+          onChange={setIncome}
+          options={[
+            { value: "payg", label: t("income.payg") },
+            { value: "self", label: t("income.self") },
+          ]}
+        />
+        <Segmented
+          label={t("firstHome")}
+          value={firstHome ? "yes" : "no"}
+          onChange={(v) => setFirstHome(v === "yes")}
+          options={[
+            { value: "no", label: t("no") },
+            { value: "yes", label: t("yes") },
+          ]}
+        />
+        <Segmented
+          label={t("needOffset")}
+          value={needOffset ? "yes" : "no"}
+          onChange={(v) => setNeedOffset(v === "yes")}
+          options={[
+            { value: "no", label: t("needOffset.no") },
+            { value: "yes", label: t("needOffset.yes") },
+          ]}
+        />
+      </details>
 
       {error && <p className="error">{error}</p>}
       <button className="primary" type="submit">

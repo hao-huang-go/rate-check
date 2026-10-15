@@ -24,10 +24,22 @@ export function Result({ lang, profile, comparison: c, savedId, onSubmitted, onR
     t(`repayment.${profile.repayment}`),
     profile.rateKind === "V" ? t("rateKind.V") : t("rateKind.F", { n: profile.rateKind.slice(1) }),
     `LVR ${pct(c.lvr, 0)}`,
-  ].join(" · ");
+    profile.residency !== "pr" ? t(`residency.${profile.residency}`) : null,
+    profile.income === "self" ? t("income.self") : null,
+    profile.firstHome ? t("firstHome") : null,
+    profile.needOffset ? "offset" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="result">
+      {profile.residency !== "pr" && (
+        <p className="card notice">
+          {profile.residency === "visa" ? t("res.visaNote", { n: total }) : t("res.overseasNote")}
+        </p>
+      )}
+
       <section className="card">
         <p className="eyebrow">{t("res.group", { group })}</p>
         <div className="stats">

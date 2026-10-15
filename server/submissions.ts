@@ -5,6 +5,8 @@ import { balanceBand, LOAN_AGES, lvrBand, MAX_LVR, type LoanAge, type LvrBand } 
 const PURPOSES = ["OO", "INV"] as const;
 const REPAYMENTS = ["PI", "IO"] as const;
 const RATE_KINDS = ["V", "F1", "F2", "F3", "F4", "F5"] as const;
+const RESIDENCIES = ["pr", "visa", "overseas"] as const;
+const INCOMES = ["payg", "self"] as const;
 const MAX_SUBMISSIONS_PER_DAY = 5;
 // Below this many people in a group, percentiles would be noise and could single someone out.
 export const MIN_GROUP_SIZE = 5;
@@ -20,9 +22,12 @@ export interface SubmissionInput {
   lender: string | null;
   rate: number;
   loanAge: LoanAge | null;
+  residency: (typeof RESIDENCIES)[number];
+  income: (typeof INCOMES)[number] | null;
 }
 
 interface StoredGroup {
+  residency: string;
   purpose: string;
   repayment: string;
   rate_kind: string;
@@ -83,7 +88,22 @@ export function parseSubmission(body: unknown): SubmissionInput {
     lender: parseLender(b.lender),
     rate: Math.round(b.rate * 100_000) / 100_000,
     loanAge: parseLoanAge(b.loanAge),
+    residency: parseResidency(b.residency),
+    income: parseIncome(b.income),
   };
+}
+
+// Residency and income are optional so clients from before the borrower-profile fields keep working.
+function parseResidency(value: unknown): (typeof RESIDENCIES)[number] {
+  if (value === null || value === undefined) return "pr";
+  if (!oneOf(RESIDENCIES, value)) throw new InputError("residency");
+  return value;
+}
+
+function parseIncome(value: unknown): (typeof INCOMES)[number] | null {
+  if (value === null || value === undefined) return null;
+  if (!oneOf(INCOMES, value)) throw new InputError("income");
+  return value;
 }
 
 function parseLender(value: unknown): string | null {
@@ -144,6 +164,8 @@ export async function insertSubmission(
       lvr_band: band,
       balance_band: balanceBand(input.balance),
       loan_age: input.loanAge,
+      residency: input.residency,
+      income: input.income,
       lender: input.lender,
       rate: input.rate,
       ip_hash: ipHash,
@@ -158,7 +180,7 @@ export async function insertSubmission(
 export async function getSubmissionGroup(db: SupabaseClient, id: string): Promise<StoredGroup | null> {
   const { data, error } = await db
     .from("submissions")
-    .select("purpose, repayment, rate_kind, lvr_band, lender, rate")
+    .select("residency, purpose, repayment, rate_kind, lvr_band, lender, rate")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -167,6 +189,7 @@ export async function getSubmissionGroup(db: SupabaseClient, id: string): Promis
 
 export async function groupStats(db: SupabaseClient, group: StoredGroup): Promise<GroupStats> {
   const { data, error } = await db.rpc("submission_stats", {
+    p_residency: group.residency,
     p_purpose: group.purpose,
     p_repayment: group.repayment,
     p_rate_kind: group.rate_kind,

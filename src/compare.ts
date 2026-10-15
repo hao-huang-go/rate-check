@@ -1,6 +1,10 @@
+import { PRODUCT_FLAGS } from "./benchmarkWire";
+
 export type Purpose = "OO" | "INV";
 export type Repayment = "PI" | "IO";
 export type RateKind = "V" | "F1" | "F2" | "F3" | "F4" | "F5";
+export type Residency = "pr" | "visa" | "overseas"; // citizen/PR, temporary visa, overseas income or non-resident
+export type Income = "payg" | "self";
 
 export interface BenchmarkRow {
   l: string; // lender
@@ -12,6 +16,7 @@ export interface BenchmarkRow {
   a: [number, number | null]; // loan amount bounds in AUD
   rate: number; // fraction, 0.0624 = 6.24%
   o: boolean; // has offset account
+  f: number; // PRODUCT_FLAGS
 }
 
 export interface Benchmark {
@@ -27,6 +32,10 @@ export interface LoanProfile {
   propertyValue: number;
   lender: string | null;
   rate: number; // fraction
+  residency: Residency;
+  income: Income;
+  firstHome: boolean;
+  needOffset: boolean;
 }
 
 export interface LenderBest {
@@ -52,9 +61,19 @@ export function lvrOf(profile: Pick<LoanProfile, "balance" | "propertyValue">): 
   return profile.balance / profile.propertyValue;
 }
 
+// Whether this borrower is eligible for the product at all, as far as public data says.
+function eligible(row: BenchmarkRow, profile: LoanProfile): boolean {
+  if (profile.residency !== "pr" && row.f & PRODUCT_FLAGS.PR_ONLY) return false;
+  if (profile.income === "self" && row.f & PRODUCT_FLAGS.PAYG_ONLY) return false;
+  if (!profile.firstHome && row.f & PRODUCT_FLAGS.FHB_ONLY) return false;
+  if (profile.needOffset && !row.o) return false;
+  return true;
+}
+
 function matches(row: BenchmarkRow, profile: LoanProfile, lvr: number): boolean {
   const [minAmount, maxAmount] = row.a;
   return (
+    eligible(row, profile) &&
     row.u === profile.purpose &&
     row.r === profile.repayment &&
     row.k === profile.rateKind &&

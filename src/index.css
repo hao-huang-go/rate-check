@@ -465,3 +465,24 @@ footer {
   font-size: 14px;
   user-select: all;
 }
+
+.more {
+  margin: 0 0 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.more summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.notice {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--text);
+  font-size: 14px;
+}

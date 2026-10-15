@@ -39,6 +39,15 @@ export interface NegotiationReportInput {
   residency: string;
 }
 
+export type FeedbackWant = "refinance_calc" | "rate_alerts" | "fixed_expiry" | "broker_compare" | "investor" | "other";
+
+export interface FeedbackInput {
+  wants: FeedbackWant[];
+  message: string | null;
+  lang: string;
+  page: "form" | "result";
+}
+
 export interface SubmissionResult {
   id: string;
   stats: GroupStats;
@@ -85,6 +94,16 @@ export async function fetchNegotiationStats(lender: string): Promise<Negotiation
 export async function reportNegotiation(input: NegotiationReportInput): Promise<NegotiationStats> {
   return json(
     await fetch("/api/negotiation", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  );
+}
+
+export async function sendFeedback(input: FeedbackInput): Promise<void> {
+  await json(
+    await fetch("/api/feedback", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),

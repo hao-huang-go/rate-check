@@ -14,9 +14,12 @@ export function Breakdown({ lang, profile, data }: Props) {
   const all = [...data.lvr, ...data.rateKind, ...data.offset, ...data.purpose, ...data.repayment];
   if (!all.length) return null;
 
-  // Shared scale so bars compare across groups, padded so the shortest bar is still visible.
-  const lo = Math.min(...all.map((r) => r.best), profile.rate) - 0.002;
-  const hi = Math.max(...all.map((r) => r.median), profile.rate) + 0.001;
+  const hasOwn = profile.lender !== null && all.some((r) => r.own !== null);
+  const values = all.flatMap((r) => (r.own !== null ? [r.median, r.own] : [r.median]));
+
+  // Shared scale so marks compare across groups, padded so nothing sits on the track's edge.
+  const lo = Math.min(...values, profile.rate) - 0.002;
+  const hi = Math.max(...values, profile.rate) + 0.002;
   const pos = (rate: number) => `${((rate - lo) / (hi - lo)) * 100}%`;
 
   const groups: { title: string; rows: BreakdownRow[]; label: (key: string) => string }[] = [
@@ -34,11 +37,11 @@ export function Breakdown({ lang, profile, data }: Props) {
   return (
     <section className="card breakdown">
       <h3>{t("bd.title")}</h3>
-      <div className="bd-head">
+      <div className={hasOwn ? "bd-head" : "bd-head no-own"}>
         <span />
         <span />
-        <span>{t("bd.best")}</span>
         <span>{t("bd.median")}</span>
+        {hasOwn && <span className="own-col">{profile.lender}</span>}
       </div>
       {groups
         .filter((g) => g.rows.length > 1)
@@ -46,19 +49,24 @@ export function Breakdown({ lang, profile, data }: Props) {
           <div key={g.title} className="bd-group">
             <p className="bd-title">{g.title}</p>
             {g.rows.map((r) => (
-              <div key={r.key} className={r.current ? "bd-row current" : "bd-row"}>
+              <div key={r.key} className={`bd-row${r.current ? " current" : ""}${hasOwn ? "" : " no-own"}`}>
                 <span className="bd-label">{g.label(r.key)}</span>
                 <span className="bd-track">
-                  <span className="bd-bar" style={{ left: pos(r.best), width: `calc(${pos(r.median)} - ${pos(r.best)})` }} />
+                  <span className="bd-median" style={{ left: pos(r.median) }} />
+                  {hasOwn && r.own !== null && <span className="bd-own" style={{ left: pos(r.own) }} />}
                   <span className="bd-you" style={{ left: pos(profile.rate) }} />
                 </span>
-                <span className="bd-num">{pct(r.best)}</span>
                 <span className="bd-num muted">{pct(r.median)}</span>
+                {hasOwn && <span className="bd-num">{r.own !== null ? pct(r.own) : "—"}</span>}
               </div>
             ))}
           </div>
         ))}
-      <p className="note">{t("bd.legend", { rate: pct(profile.rate) })}</p>
+      <p className="note">
+        {hasOwn
+          ? t("bd.legendOwn", { lender: profile.lender ?? "", rate: pct(profile.rate) })
+          : t("bd.legend", { rate: pct(profile.rate) })}
+      </p>
     </section>
   );
 }

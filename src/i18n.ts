@@ -43,11 +43,26 @@ const zh = {
   "res.overseasNote": "海外收入贷款多来自非银行机构，不在公开数据里。下面的价格只能当下限参考。",
   "bd.title": "换个条件，价格差多少",
   "bd.lvr": "贷款成数",
-  "bd.best": "最低",
   "bd.median": "中位",
   "bd.offsetYes": "有 offset",
   "bd.offsetNo": "不要求",
-  "bd.legend": "条形 = 最低到中位的价格区间；虚线 = 你的 {rate}；高亮行 = 你现在的条件",
+  "bd.legend": "圆点 = 市场中位数；虚线 = 你的 {rate}；高亮行 = 你现在的条件",
+  "bd.legendOwn": "圆点 = 市场中位数；方块 = {lender} 给新客户的价格；虚线 = 你的 {rate}；高亮行 = 你现在的条件",
+  "fb.open": "有建议？告诉我 →",
+  "fb.title": "你还想要什么功能？",
+  "fb.want.refinance_calc": "转贷回本计算器",
+  "fb.want.rate_alerts": "利率变动提醒",
+  "fb.want.fixed_expiry": "固定利率到期规划",
+  "fb.want.broker_compare": "和 broker 比价",
+  "fb.want.investor": "投资房专属对比",
+  "fb.want.other": "其他",
+  "fb.message": "还有什么想说的？（选填）",
+  "fb.placeholder": "哪里看不懂、缺什么、哪里坏了……想要回复的话留个联系方式",
+  "fb.empty": "选一个功能或者写几句再提交",
+  "fb.submit": "发送反馈",
+  "fb.anon": "匿名，我会一条条看。",
+  "fb.thanksTitle": "收到，谢谢！",
+  "fb.thanks": "你的反馈会决定下一步先做什么。",
   "coffee.title": "觉得有用？",
   "coffee.body": "这个工具是我一个人做的，完全免费。请我喝杯咖啡，就是最大的支持 ☕",
   "coffee.button": "请我喝杯咖啡",
@@ -162,11 +177,26 @@ const en: typeof zh = {
   "res.overseasNote": "Overseas-income loans mostly come from non-bank lenders outside public data. Treat these rates as a floor.",
   "bd.title": "How much each condition changes the price",
   "bd.lvr": "LVR",
-  "bd.best": "Best",
   "bd.median": "Median",
   "bd.offsetYes": "With offset",
   "bd.offsetNo": "Any",
-  "bd.legend": "Bar = best to median; dashed line = your {rate}; highlighted = your current terms",
+  "bd.legend": "Dot = market median; dashed line = your {rate}; highlighted = your current terms",
+  "bd.legendOwn": "Dot = market median; square = {lender}'s new-customer rate; dashed line = your {rate}; highlighted = your current terms",
+  "fb.open": "Got a suggestion? Tell me →",
+  "fb.title": "What should this do next?",
+  "fb.want.refinance_calc": "Refinance break-even calculator",
+  "fb.want.rate_alerts": "Rate change alerts",
+  "fb.want.fixed_expiry": "Fixed rate expiry planner",
+  "fb.want.broker_compare": "Compare with a broker",
+  "fb.want.investor": "Investor-focused comparison",
+  "fb.want.other": "Something else",
+  "fb.message": "Anything else? (optional)",
+  "fb.placeholder": "What's confusing, missing or broken. Add contact details if you'd like a reply.",
+  "fb.empty": "Pick a feature or write a few words first",
+  "fb.submit": "Send feedback",
+  "fb.anon": "Anonymous. I read every one.",
+  "fb.thanksTitle": "Got it, thanks!",
+  "fb.thanks": "Your feedback decides what gets built next.",
   "coffee.title": "Found it useful?",
   "coffee.body": "I built this on my own and keep it free. A coffee helps a lot ☕",
   "coffee.button": "Buy me a coffee",
@@ -246,6 +276,23 @@ export function translate(lang: Lang, key: MessageKey, vars: Record<string, stri
   return dictionaries[lang][key].replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
 }
 
+const LANG_KEY = "rate-check.lang";
+
+// A choice made on the toggle wins over the browser language.
 export function detectLang(): Lang {
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved === "zh" || saved === "en") return saved;
+  } catch {
+    // storage blocked: fall back to the browser language
+  }
   return navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+
+export function saveLang(lang: Lang): void {
+  try {
+    localStorage.setItem(LANG_KEY, lang);
+  } catch {
+    // storage blocked: the choice just won't persist
+  }
 }

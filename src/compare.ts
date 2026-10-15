@@ -133,8 +133,8 @@ export function compare(benchmark: Benchmark, profile: LoanProfile): Comparison 
 
 export interface BreakdownRow {
   key: string; // what varies: an LVR value, rate kind, purpose, repayment, or offset flag
-  best: number;
   median: number;
+  own: number | null; // the borrower's own lender's best rate under this condition
   lenders: number;
   current: boolean;
 }
@@ -162,7 +162,8 @@ function rowFor(benchmark: Benchmark, profile: LoanProfile, key: string, current
   );
   if (!lenders.length) return null;
   const rates = lenders.map((l) => l.rate);
-  return { key, best: rates[0], median: quantile(rates, 0.5), lenders: lenders.length, current };
+  const own = lenders.find((l) => l.lender === profile.lender)?.rate ?? null;
+  return { key, median: quantile(rates, 0.5), own, lenders: lenders.length, current };
 }
 
 // Varies one criterion at a time, holding the rest of the profile fixed.

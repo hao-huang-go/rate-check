@@ -2,6 +2,7 @@ import { Breakdown } from "./Breakdown";
 import type { Breakdown as BreakdownData, Comparison, LoanProfile } from "./compare";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
+import { FeedbackCard } from "./FeedbackCard";
 import { NegotiationCard } from "./NegotiationCard";
 import { RateChart } from "./RateChart";
 import { ShareCard } from "./ShareCard";
@@ -125,6 +126,8 @@ export function Result({ lang, profile, comparison: c, breakdown, savedId, onSub
       </section>
 
       <ShareCard lang={lang} profile={profile} savedId={savedId} onSubmitted={onSubmitted} />
+
+      <FeedbackCard lang={lang} page="result" startOpen={true} />
 
       <section className="card coffee">
         <div>

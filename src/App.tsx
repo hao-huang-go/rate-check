@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadBenchmark, type LoadedBenchmark } from "./benchmark";
 import { breakdown, compare, type LoanProfile } from "./compare";
-import { detectLang, translate, type Lang, type MessageKey } from "./i18n";
+import { FeedbackCard } from "./FeedbackCard";
+import { detectLang, saveLang, translate, type Lang, type MessageKey } from "./i18n";
 import { LoanForm } from "./LoanForm";
 import { Result } from "./Result";
 import { loadSaved, sameProfile, saveSubmission, type SavedSubmission } from "./savedSubmission";
@@ -45,7 +46,14 @@ export default function App() {
           <h1>{t("title")}</h1>
           <p className="subtitle">{t("subtitle")}</p>
         </div>
-        <button className="lang" onClick={() => setLang(lang === "zh" ? "en" : "zh")}>
+        <button
+          className="lang"
+          onClick={() => {
+            const next = lang === "zh" ? "en" : "zh";
+            setLang(next);
+            saveLang(next);
+          }}
+        >
           {t("langToggle")}
         </button>
       </header>
@@ -71,6 +79,7 @@ export default function App() {
           )}
           {showResult && profile && !comparison && <p className="error card">{t("noMatch")}</p>}
           <LoanForm lang={lang} lenders={benchmark.lenders} initial={profile} onSubmit={handleSubmit} />
+          <FeedbackCard lang={lang} page="form" startOpen={false} />
         </>
       )}
 

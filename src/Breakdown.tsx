@@ -15,12 +15,9 @@ export function Breakdown({ lang, profile, data }: Props) {
   if (!all.length) return null;
 
   const hasOwn = profile.lender !== null && all.some((r) => r.own !== null);
-  const values = all.flatMap((r) => (r.own !== null ? [r.median, r.own] : [r.median]));
-
-  // Shared scale so marks compare across groups, padded so nothing sits on the track's edge.
-  const lo = Math.min(...values, profile.rate) - 0.002;
-  const hi = Math.max(...values, profile.rate) + 0.002;
-  const pos = (rate: number) => `${((rate - lo) / (hi - lo)) * 100}%`;
+  // "How much each condition changes the price" is measured on the borrower's own lender when we
+  // know it, otherwise on the market median, relative to the row for their current terms.
+  const priceOf = (r: BreakdownRow) => (hasOwn ? r.own : r.median);
 
   const groups: { title: string; rows: BreakdownRow[]; label: (key: string) => string }[] = [
     { title: t("bd.lvr"), rows: data.lvr, label: (k) => (k === "0-60" ? "≤60%" : `${k.replace("-", "–")}%`) },
@@ -39,33 +36,35 @@ export function Breakdown({ lang, profile, data }: Props) {
       <h3>{t("bd.title")}</h3>
       <div className={hasOwn ? "bd-head" : "bd-head no-own"}>
         <span />
-        <span />
         <span>{t("bd.median")}</span>
         {hasOwn && <span className="own-col">{profile.lender}</span>}
+        <span>{t("bd.diff")}</span>
       </div>
       {groups
         .filter((g) => g.rows.length > 1)
         .map((g) => (
           <div key={g.title} className="bd-group">
             <p className="bd-title">{g.title}</p>
-            {g.rows.map((r) => (
-              <div key={r.key} className={`bd-row${r.current ? " current" : ""}${hasOwn ? "" : " no-own"}`}>
-                <span className="bd-label">{g.label(r.key)}</span>
-                <span className="bd-track">
-                  <span className="bd-median" style={{ left: pos(r.median) }} />
-                  {hasOwn && r.own !== null && <span className="bd-own" style={{ left: pos(r.own) }} />}
-                  <span className="bd-you" style={{ left: pos(profile.rate) }} />
-                </span>
-                <span className="bd-num muted">{pct(r.median)}</span>
-                {hasOwn && <span className="bd-num">{r.own !== null ? pct(r.own) : "—"}</span>}
-              </div>
-            ))}
+            {g.rows.map((r) => {
+              const base = g.rows.find((x) => x.current);
+              const price = priceOf(r);
+              const basePrice = base ? priceOf(base) : null;
+              const diff = price !== null && basePrice !== null ? price - basePrice : null;
+              return (
+                <div key={r.key} className={`bd-row${r.current ? " current" : ""}${hasOwn ? "" : " no-own"}`}>
+                  <span className="bd-label">{g.label(r.key)}</span>
+                  <span className="bd-num muted">{pct(r.median)}</span>
+                  {hasOwn && <span className="bd-num">{r.own !== null ? pct(r.own) : "—"}</span>}
+                  <span className={`bd-num bd-diff${diff !== null && diff > 0.00005 ? " up" : diff !== null && diff < -0.00005 ? " down" : ""}`}>
+                    {r.current ? t("bd.now") : diff === null ? "—" : `${diff > 0 ? "+" : diff < 0 ? "−" : "±"}${pct(Math.abs(diff))}`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ))}
       <p className="note">
-        {hasOwn
-          ? t("bd.legendOwn", { lender: profile.lender ?? "", rate: pct(profile.rate) })
-          : t("bd.legend", { rate: pct(profile.rate) })}
+        {hasOwn ? t("bd.legendOwn", { lender: profile.lender ?? "" }) : t("bd.legend")}
       </p>
     </section>
   );

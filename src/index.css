@@ -525,7 +525,7 @@ footer {
 .bd-head,
 .bd-row {
   display: grid;
-  grid-template-columns: 88px 1fr 52px 64px;
+  grid-template-columns: minmax(0, 1fr) 56px 76px 64px;
   align-items: center;
   gap: 8px;
 }
@@ -565,14 +565,9 @@ footer {
   text-overflow: ellipsis;
 }
 
-.bd-track {
-  position: relative;
-  height: 10px;
-}
-
 .bd-head.no-own,
 .bd-row.no-own {
-  grid-template-columns: 88px 1fr 52px;
+  grid-template-columns: minmax(0, 1fr) 64px 64px;
 }
 
 .bd-head .own-col {
@@ -583,47 +578,6 @@ footer {
   font-weight: 600;
 }
 
-.bd-track::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 4px;
-  height: 2px;
-  background: var(--line);
-}
-
-.bd-median,
-.bd-own {
-  position: absolute;
-  top: 0;
-  width: 10px;
-  height: 10px;
-  margin-left: -5px;
-}
-
-.bd-median {
-  border-radius: 50%;
-  background: var(--bar-dim);
-}
-
-.bd-row.current .bd-median {
-  background: var(--bar);
-}
-
-.bd-own {
-  border-radius: 2px;
-  background: var(--accent);
-  outline: 2px solid var(--card);
-}
-
-.bd-you {
-  position: absolute;
-  top: -2px;
-  bottom: -2px;
-  border-left: 2px dashed var(--warn);
-}
-
 .bd-num {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -632,6 +586,18 @@ footer {
 .bd-num.muted {
   color: var(--muted);
   font-weight: 400;
+}
+
+.bd-diff {
+  color: var(--muted);
+}
+
+.bd-diff.up {
+  color: var(--warn);
+}
+
+.bd-diff.down {
+  color: var(--accent);
 }
 
 .script-wrap {

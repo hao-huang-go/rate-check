@@ -7,8 +7,8 @@ import {
   insertSubmission,
   parseSubmission,
   RateLimitError,
-  supabaseFromEnv,
 } from "../server/submissions.js";
+import { supabaseFromEnv } from "../server/supabase.js";
 
 export async function POST(request: Request): Promise<Response> {
   let input;

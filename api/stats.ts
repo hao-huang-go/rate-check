@@ -3,8 +3,8 @@ import {
   groupStats,
   InputError,
   parseSubmissionId,
-  supabaseFromEnv,
 } from "../server/submissions.js";
+import { supabaseFromEnv } from "../server/supabase.js";
 
 // Stats are only reachable with a submission id: you see the group after you've contributed to it.
 export async function GET(request: Request): Promise<Response> {

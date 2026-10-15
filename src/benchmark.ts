@@ -1,23 +1,5 @@
-import type { Benchmark, BenchmarkRow, Purpose, RateKind, Repayment } from "./compare";
-
-// Mirrors the compact format written by scripts/build-benchmark.mjs.
-interface WireBenchmark {
-  v: 2;
-  fetchedAt: string;
-  lenders: [name: string, zh: string][];
-  products: [lender: number, name: string, offset: 0 | 1][];
-  rows: [
-    product: number,
-    purpose: 0 | 1,
-    repayment: 0 | 1,
-    kind: RateKind,
-    lvrMin: number,
-    lvrMax: number,
-    amountMin: number,
-    amountMax: number,
-    rate: number,
-  ][];
-}
+import type { WireBenchmark } from "./benchmarkWire";
+import type { Benchmark, BenchmarkRow, Purpose, Repayment } from "./compare";
 
 export interface Lender {
   name: string;
@@ -53,7 +35,15 @@ export function decodeBenchmark(wire: WireBenchmark): LoadedBenchmark {
   return { fetchedAt: wire.fetchedAt, rows, lenders };
 }
 
+// Today's rates come from the daily cron via /api/benchmark; the bundled static copy keeps
+// the page working if that's unavailable (local dev without Supabase, a storage outage).
 export async function loadBenchmark(): Promise<LoadedBenchmark> {
+  try {
+    const res = await fetch("/api/benchmark");
+    if (res.ok) return decodeBenchmark(await res.json());
+  } catch {
+    // fall through to the static copy
+  }
   const res = await fetch("/benchmark.json");
   return decodeBenchmark(await res.json());
 }

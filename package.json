@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "data": "node scripts/fetch-rates.mjs && node scripts/build-benchmark.mjs",
-    "benchmark": "node scripts/build-benchmark.mjs"
+    "data": "tsx --env-file=.env.local scripts/refresh-rates.ts",
+    "data:upload": "tsx --env-file=.env.local scripts/refresh-rates.ts --upload"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -26,8 +26,12 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "tsx": "^4.23.15",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

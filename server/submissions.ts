@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { balanceBand, LOAN_AGES, lvrBand, MAX_LVR, type LoanAge, type LvrBand } from "../src/bands.js";
 
 const PURPOSES = ["OO", "INV"] as const;
@@ -115,12 +115,6 @@ export function clientIp(request: Request): string {
   );
 }
 
-export function supabaseFromEnv(): SupabaseClient {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SECRET_KEY;
-  if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_SECRET_KEY must be set");
-  return createClient(url, key, { auth: { persistSession: false } });
-}
 
 export class RateLimitError extends Error {}
 

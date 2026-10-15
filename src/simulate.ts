@@ -1,4 +1,4 @@
-import type { Repayment } from "./compare";
+import type { Repayment } from "./compare.js";
 
 // Monthly repayment on a standard amortising loan, or interest only.
 export function monthlyRepayment(balance: number, annualRate: number, years: number, repayment: Repayment): number {

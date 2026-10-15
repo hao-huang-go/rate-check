@@ -1,4 +1,4 @@
-import type { RateKind } from "./compare";
+import type { RateKind } from "./compare.js";
 
 // Compact benchmark format: lender and product tables, then one positional array per rate.
 // Written by server/benchmark.ts, decoded by src/benchmark.ts.

@@ -1,4 +1,5 @@
-import type { Comparison, LoanProfile } from "./compare";
+import { Breakdown } from "./Breakdown";
+import type { Breakdown as BreakdownData, Comparison, LoanProfile } from "./compare";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
 import { NegotiationCard } from "./NegotiationCard";
@@ -9,6 +10,7 @@ interface Props {
   lang: Lang;
   profile: LoanProfile;
   comparison: Comparison;
+  breakdown: BreakdownData;
   savedId: string | null;
   onSubmitted: (id: string) => void;
   onRestart: () => void;
@@ -16,7 +18,7 @@ interface Props {
 
 const LOWEST_SHOWN = 5;
 
-export function Result({ lang, profile, comparison: c, savedId, onSubmitted, onRestart }: Props) {
+export function Result({ lang, profile, comparison: c, breakdown, savedId, onSubmitted, onRestart }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const total = c.lenders.length;
   const group = [
@@ -79,6 +81,8 @@ export function Result({ lang, profile, comparison: c, savedId, onSubmitted, onR
         <RateChart rates={c.lenders.map((l) => l.rate)} yours={profile.rate} youLabel={t("res.chartYou")} />
       </section>
 
+      <Breakdown lang={lang} profile={profile} data={breakdown} />
+
       {c.ownLender && (
         <section className="card own">
           {c.overpayVsOwnLender > 0 ? (
@@ -121,6 +125,16 @@ export function Result({ lang, profile, comparison: c, savedId, onSubmitted, onR
       </section>
 
       <ShareCard lang={lang} profile={profile} savedId={savedId} onSubmitted={onSubmitted} />
+
+      <section className="card coffee">
+        <div>
+          <h3>{t("coffee.title")}</h3>
+          <p className="sub">{t("coffee.body")}</p>
+        </div>
+        <a className="secondary" href="https://buymeacoffee.com/tyah0510" target="_blank" rel="noopener noreferrer">
+          {t("coffee.button")}
+        </a>
+      </section>
 
       <button className="ghost" onClick={onRestart}>
         {t("res.again")}

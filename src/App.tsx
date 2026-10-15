@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadBenchmark, type LoadedBenchmark } from "./benchmark";
-import { compare, type LoanProfile } from "./compare";
+import { breakdown, compare, type LoanProfile } from "./compare";
 import { detectLang, translate, type Lang, type MessageKey } from "./i18n";
 import { LoanForm } from "./LoanForm";
 import { Result } from "./Result";
@@ -27,6 +27,10 @@ export default function App() {
     () => (benchmark && profile ? compare(benchmark, profile) : null),
     [benchmark, profile],
   );
+  const criteria = useMemo(
+    () => (benchmark && profile ? breakdown(benchmark, profile) : null),
+    [benchmark, profile],
+  );
 
   function handleSubmit(next: LoanProfile) {
     setProfile(next);
@@ -48,11 +52,12 @@ export default function App() {
 
       {!benchmark ? (
         <div className="card loading" />
-      ) : showResult && profile && comparison ? (
+      ) : showResult && profile && comparison && criteria ? (
         <Result
           lang={lang}
           profile={profile}
           comparison={comparison}
+          breakdown={criteria}
           savedId={saved && sameProfile(saved.profile, profile) ? saved.id : null}
           onSubmitted={(id) => setSaved(saveSubmission(id, profile))}
           onRestart={() => setShowResult(false)}

@@ -92,12 +92,12 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
 
   const cohortStats = stats.cohorts[cohort] ?? stats.cohorts.all;
   const cohortN = cohortStats.income.n;
-  const tabs: { key: Cohort; label: string }[] = [
+  const tabs: { key: Cohort; label: string; hint?: string }[] = [
     { key: "all", label: t("rank.all") },
     { key: "age", label: t("rank.ageTab", { age: household.age }) },
     { key: "group", label: groupLabel || t("rank.group") },
     { key: "state", label: household.state },
-    { key: "band", label: t("rank.bandTab", { band: incomeBandLabel(totals.income) }) },
+    { key: "band", label: t("rank.bandTab"), hint: incomeBandLabel(totals.income) },
   ];
 
   const format: Record<Metric, (v: number) => string> = {
@@ -149,7 +149,10 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
             <span className="tab-label" title={tab.label}>
               {tab.label}
             </span>
-            <small>{t("rank.people", { n: stats.cohorts[tab.key]?.income.n ?? 0 })}</small>
+            <small>
+              {tab.hint && `${tab.hint} · `}
+              {t("rank.people", { n: stats.cohorts[tab.key]?.income.n ?? 0 })}
+            </small>
           </button>
         ))}
       </div>

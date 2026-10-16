@@ -1,10 +1,14 @@
 // Household questionnaire: answer options and their bands, shared by the wizard and the API.
 import { lvrBand, type BalanceBand, type LvrBand } from "./bands.js";
 import { monthlyRepayment } from "./simulate.js";
+import { afterTax } from "./tax.js";
 import type { Purpose, RateKind, Repayment, Residency } from "./compare.js";
 
 export const STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"] as const;
 export type AuState = (typeof STATES)[number];
+
+export const AGE_BANDS = ["18-24", "25-29", "30-34", "35-39", "40-44", "45-54", "55-64", "65+"] as const;
+export type AgeBand = (typeof AGE_BANDS)[number];
 
 export const ROLES = ["self", "partner", "other"] as const;
 export type Role = (typeof ROLES)[number];
@@ -40,7 +44,7 @@ export interface Member {
   role: Role;
   occupation: string; // 6-digit ANZSCO code as picked; only the 4-digit unit group is stored
   experience: Experience;
-  income: number; // AUD/yr base, before tax, excluding super
+  income: number; // AUD/yr base before tax, excluding super (after-tax entries are converted first)
 }
 
 export interface Property {
@@ -57,6 +61,7 @@ export interface Property {
 export interface Household {
   residency: Residency;
   state: AuState;
+  age: AgeBand; // of the person filling it in
   members: Member[];
   properties: Property[];
   savings: SavingsBand | null;
@@ -89,6 +94,7 @@ export function propertyLvrBand(p: LvrInput): LvrBand {
 export function householdTotals(h: Pick<Household, "members" | "properties">) {
   return {
     income: h.members.reduce((sum, m) => sum + roundIncome(m.income), 0),
+    incomeAfterTax: Math.round(h.members.reduce((sum, m) => sum + afterTax(roundIncome(m.income)), 0)),
     repayment: h.properties.reduce((sum, p) => sum + MONTHLY_MIDPOINT[p.monthly], 0),
   };
 }

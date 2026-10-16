@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { BALANCE_BANDS } from "../src/bands.js";
 import {
+  AGE_BANDS,
   EXPERIENCE,
   householdTotals,
   MAX_MEMBERS,
@@ -87,6 +88,7 @@ export function parseHousehold(body: unknown): Household {
   return {
     residency: pick(RESIDENCIES, b.residency, "residency"),
     state: pick(STATES, b.state, "state"),
+    age: pick(AGE_BANDS, b.age, "age"),
     members,
     properties: b.properties.map(parseProperty),
     savings: parseSavings(b.savings),
@@ -99,8 +101,10 @@ function toRow(h: Household) {
   return {
     residency: h.residency,
     state: h.state,
+    age_band: h.age,
     members: h.members.length,
     income_total: totals.income,
+    income_after_tax_total: totals.incomeAfterTax,
     primary_group: h.members[0].occupation.slice(0, 2),
     repayment_total: totals.repayment,
     property_count: h.properties.length,
@@ -154,7 +158,7 @@ export interface MetricStats {
 
 export interface HouseholdStats {
   minGroupSize: number;
-  cohorts: Record<"all" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
+  cohorts: Record<"all" | "age" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
   rates: { position: number; stats: MetricStats }[];
 }
 

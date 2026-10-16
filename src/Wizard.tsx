@@ -5,6 +5,7 @@ import type { Lender } from "./benchmark";
 import type { RateKind } from "./compare";
 import { groupAmount } from "./format";
 import {
+  AGE_BANDS,
   EXPERIENCE,
   MAX_MEMBERS,
   MAX_PROPERTIES,
@@ -19,6 +20,7 @@ import { translate, type Lang, type MessageKey } from "./i18n";
 import { groupName, loadOccupations, searchOccupations, type OccupationData } from "./occupations";
 import { SearchSelect, type SearchOption } from "./SearchSelect";
 import {
+  grossIncome,
   newMember,
   newProperty,
   stepComplete,
@@ -168,6 +170,12 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
                 { value: "overseas", label: t("residency.overseas") },
               ]}
             />
+            <p className="wz-label">{t("wz.age")}</p>
+            <Choices
+              value={draft.age}
+              onPick={(age) => onChange({ ...draft, age })}
+              options={AGE_BANDS.map((v) => ({ value: v, label: v.endsWith("+") ? t("wz.ageOver", { n: v.slice(0, -1) }) : v }))}
+            />
             <p className="wz-label">{t("wz.state")}</p>
             <Choices value={draft.state} onPick={(state) => onChange({ ...draft, state })} options={STATES.map((v) => ({ value: v, label: v }))} />
           </>
@@ -235,6 +243,18 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
                 onKeyDown={(e) => e.key === "Enter" && complete && next()}
               />
             </div>
+            <label className="wz-check">
+              <input
+                id={`income-after-tax-${s.member}`}
+                type="checkbox"
+                checked={m.incomeIsAfterTax}
+                onChange={(e) => updateMember(s.member, { incomeIsAfterTax: e.target.checked })}
+              />
+              {t("wz.income.afterTax")}
+            </label>
+            {m.incomeIsAfterTax && m.income.trim() !== "" && (
+              <p className="wz-hint converted">{t("wz.income.converted", { gross: `$${groupAmount(String(grossIncome(m)))}` })}</p>
+            )}
             <p className="wz-hint">{t("wz.income.hint")}</p>
           </>
         );
@@ -464,7 +484,9 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
               {draft.members.map((m, i) => (
                 <li key={`m${i}`}>
                   <span>
-                    <b>{t(`wz.role.${m.role}`)}</b> · {m.occupation?.title} · {yearsBand(m.experience ?? "0-1", lang)} · ${groupAmount(m.income)}
+                    <b>{t(`wz.role.${m.role}`)}</b> · {m.occupation?.title} · {yearsBand(m.experience ?? "0-1", lang)} · $
+                    {groupAmount(String(grossIncome(m)))}
+                    {m.incomeIsAfterTax ? ` ${t("wz.review.fromAfterTax")}` : ""}
                   </span>
                 </li>
               ))}

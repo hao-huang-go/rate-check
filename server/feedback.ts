@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { InputError, RateLimitError } from "./submissions.js";
 
-export const WANTS = ["refinance_calc", "rate_alerts", "fixed_expiry", "broker_compare", "investor", "other"] as const;
+export const WANTS = ["net_worth", "rate_alerts", "fixed_expiry", "broker_compare", "investor", "other"] as const;
 type Want = (typeof WANTS)[number];
 const LANGS = ["zh", "en"] as const;
 const PAGES = ["form", "result"] as const;

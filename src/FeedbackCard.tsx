@@ -8,7 +8,7 @@ interface Props {
   startOpen: boolean;
 }
 
-const WANTS: FeedbackWant[] = ["refinance_calc", "rate_alerts", "fixed_expiry", "broker_compare", "investor", "other"];
+const WANTS: FeedbackWant[] = ["net_worth", "rate_alerts", "fixed_expiry", "broker_compare", "investor", "other"];
 const MAX_MESSAGE = 1000;
 
 type Status = "idle" | "busy" | "done" | "error" | "rate_limited" | "empty";

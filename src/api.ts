@@ -25,7 +25,7 @@ export interface NegotiationReportInput {
   residency: string;
 }
 
-export type FeedbackWant = "refinance_calc" | "rate_alerts" | "fixed_expiry" | "broker_compare" | "investor" | "other";
+export type FeedbackWant = "net_worth" | "rate_alerts" | "fixed_expiry" | "broker_compare" | "investor" | "other";
 
 export interface FeedbackInput {
   wants: FeedbackWant[];
@@ -87,7 +87,7 @@ export interface MetricStats {
 
 export interface HouseholdStats {
   minGroupSize: number;
-  cohorts: Record<"all" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
+  cohorts: Record<"all" | "age" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
   rates: { position: number; stats: MetricStats }[];
 }
 

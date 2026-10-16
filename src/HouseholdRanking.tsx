@@ -12,8 +12,11 @@ interface Props {
   groupLabel: string;
 }
 
-type Cohort = "all" | "group" | "state";
+type Cohort = "all" | "age" | "group" | "state";
 type Metric = "income" | "repayment" | "ratio" | "savings";
+
+// Common rule of thumb: repayments under 30% of take-home pay.
+const RATIO_GUIDE = 0.3;
 
 const kFormat = (v: number) => (v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}m` : `$${Math.round(v / 1000)}k`);
 
@@ -65,7 +68,7 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
   const mine: Record<Metric, number | null> = {
     income: totals.income,
     repayment: hasLoan ? totals.repayment : null,
-    ratio: hasLoan && totals.income > 0 ? (totals.repayment * 12) / totals.income : null,
+    ratio: hasLoan && totals.incomeAfterTax > 0 ? (totals.repayment * 12) / totals.incomeAfterTax : null,
     savings: household.savings ? SAVINGS_BANDS.indexOf(household.savings) + 1 : null,
   };
 
@@ -73,6 +76,7 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
   const cohortN = cohortStats.income.n;
   const tabs: { key: Cohort; label: string }[] = [
     { key: "all", label: t("rank.all") },
+    { key: "age", label: t("rank.ageTab", { age: household.age }) },
     { key: "group", label: groupLabel || t("rank.group") },
     { key: "state", label: household.state },
   ];
@@ -132,6 +136,11 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
               <span className="metric-title">{t(`rank.${metric}`)}</span>
               {ready(s) && <span className="metric-rank">{headline(metric, s)}</span>}
             </div>
+            {metric === "ratio" && (
+              <p className={value > RATIO_GUIDE ? "ratio-guide over" : "ratio-guide"}>
+                {t(value > RATIO_GUIDE ? "rank.ratioOver" : "rank.ratioUnder")}
+              </p>
+            )}
             {ready(s) ? (
               <>
                 <Histogram stats={s} mine={value} format={format[metric]} />

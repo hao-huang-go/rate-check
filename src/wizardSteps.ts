@@ -1,12 +1,14 @@
 import type { BalanceBand } from "./bands";
 import type { Purpose, RateKind, Repayment, Residency } from "./compare";
-import type { AuState, Experience, Household, MonthlyBand, Role, SavingsBand, ValueBand } from "./household";
+import type { AgeBand, AuState, Experience, Household, MonthlyBand, Role, SavingsBand, ValueBand } from "./household";
+import { grossFromAfterTax } from "./tax";
 
 export interface DraftMember {
   role: Role;
   occupation: { code: string; title: string } | null;
   experience: Experience | null;
   income: string; // as typed, digits with separators
+  incomeIsAfterTax: boolean;
 }
 
 export interface DraftProperty {
@@ -25,6 +27,7 @@ export interface DraftProperty {
 export interface Draft {
   residency: Residency | null;
   state: AuState | null;
+  age: AgeBand | null;
   members: DraftMember[];
   hasProperty: boolean | null;
   properties: DraftProperty[];
@@ -46,7 +49,13 @@ export type Step =
   | { kind: "savings" }
   | { kind: "review" };
 
-export const newMember = (role: Role): DraftMember => ({ role, occupation: null, experience: null, income: "" });
+export const newMember = (role: Role): DraftMember => ({
+  role,
+  occupation: null,
+  experience: null,
+  income: "",
+  incomeIsAfterTax: false,
+});
 
 export const newProperty = (purpose: Purpose | null = null): DraftProperty => ({
   purpose,
@@ -64,6 +73,7 @@ export const newProperty = (purpose: Purpose | null = null): DraftProperty => ({
 export const emptyDraft = (): Draft => ({
   residency: null,
   state: null,
+  age: null,
   members: [newMember("self")],
   hasProperty: null,
   properties: [],
@@ -99,7 +109,7 @@ const MAX_INCOME = 5_000_000;
 export function stepComplete(draft: Draft, step: Step): boolean {
   switch (step.kind) {
     case "residency":
-      return draft.residency !== null && draft.state !== null;
+      return draft.residency !== null && draft.state !== null && draft.age !== null;
     case "occupation":
       return draft.members[step.member].occupation !== null;
     case "experience":
@@ -128,15 +138,22 @@ export function stepComplete(draft: Draft, step: Step): boolean {
 }
 
 // Only called once every step is complete.
+// The income a member entered, as base salary before tax.
+export function grossIncome(m: Pick<DraftMember, "income" | "incomeIsAfterTax">): number {
+  const entered = parseNumber(m.income);
+  return m.incomeIsAfterTax ? grossFromAfterTax(entered) : entered;
+}
+
 export function toHousehold(draft: Draft): Household {
   return {
     residency: draft.residency!,
     state: draft.state!,
+    age: draft.age!,
     members: draft.members.map((m) => ({
       role: m.role,
       occupation: m.occupation!.code,
       experience: m.experience!,
-      income: parseNumber(m.income),
+      income: grossIncome(m),
     })),
     properties: draft.hasProperty
       ? draft.properties.map((p) => ({

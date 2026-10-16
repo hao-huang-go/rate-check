@@ -978,3 +978,19 @@ input[type="range"] {
   color: var(--muted);
   margin-right: 4px;
 }
+
+.ratio-guide {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.ratio-guide.over {
+  color: var(--warn);
+}
+
+.converted {
+  margin-top: 8px;
+  color: var(--accent);
+}

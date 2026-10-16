@@ -6,6 +6,7 @@ import { householdTotals, type Household } from "./household";
 import { HouseholdResults } from "./HouseholdResults";
 import { detectLang, saveLang, translate, type Lang, type MessageKey } from "./i18n";
 import { loadDraft, loadSavedHousehold, saveDraft, saveHousehold, type SavedHousehold } from "./savedHousehold";
+import { visitSource } from "./source";
 import { Wizard } from "./Wizard";
 import { emptyDraft, type Draft } from "./wizardSteps";
 
@@ -28,6 +29,7 @@ export default function App() {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
 
   useEffect(() => {
+    visitSource();
     loadBenchmark().then(setBenchmark);
     fetchParticipantCount().then(setParticipants);
   }, []);

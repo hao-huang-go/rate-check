@@ -71,6 +71,7 @@ export interface Household {
   members: Member[];
   properties: Property[];
   savings: SavingsBand | null;
+  source?: string | null; // where the visitor came from, e.g. "reddit", "direct"
 }
 
 export const roundIncome = (income: number) => Math.round(income / INCOME_ROUNDING) * INCOME_ROUNDING;

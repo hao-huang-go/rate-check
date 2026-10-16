@@ -1,4 +1,5 @@
 import { deviceId } from "./device";
+import { visitSource } from "./source";
 import type { Household } from "./household";
 
 export type FeedbackWant = "net_worth" | "rate_alerts" | "fixed_expiry" | "broker_compare" | "investor" | "other";
@@ -81,7 +82,7 @@ export async function submitHousehold(household: Household): Promise<HouseholdRe
     await fetch("/api/household", {
       method: "POST",
       headers: { "content-type": "application/json", "x-device-id": deviceId() },
-      body: JSON.stringify(household),
+      body: JSON.stringify({ ...household, source: visitSource() }),
     }),
   );
 }

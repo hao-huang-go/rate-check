@@ -25,6 +25,7 @@ const RATE_KINDS = ["V", "F1", "F2", "F3", "F4", "F5"] as const;
 const REPAYMENTS = ["PI", "IO"] as const;
 const MAX_PER_DAY = 5;
 const OCCUPATION_PATTERN = /^[1-8]\d{5}$/;
+const SOURCE_PATTERN = /^[a-z0-9._-]{1,40}$/;
 const LENDER_PATTERN = /^[\p{L}\p{N} .,&'()\-/]{1,80}$/u;
 
 const oneOf = <T extends string>(options: readonly T[], value: unknown): value is T =>
@@ -94,6 +95,7 @@ export function parseHousehold(body: unknown): Household {
     members,
     properties: b.properties.map(parseProperty),
     savings: parseSavings(b.savings),
+    source: typeof b.source === "string" && SOURCE_PATTERN.test(b.source) ? b.source : null,
   };
 }
 
@@ -112,6 +114,7 @@ function toRow(h: Household) {
     interest_total: h.properties.length ? totals.interest : null,
     property_count: h.properties.length,
     savings_band: h.savings,
+    source: h.source ?? null,
     member_rows: h.members.map((m, position) => ({
       position,
       role: m.role,

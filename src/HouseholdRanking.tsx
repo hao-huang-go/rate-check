@@ -195,12 +195,12 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
               <>
                 <Histogram stats={s} mine={value} format={format[metric]} />
                 <p className="metric-foot">
-                  <b>{t("rank.you", { v: format[metric](value) })}</b>{takeHome(metric)} · {t("rank.median", { v: format[metric](s.p50) })}
+                  <b>{individual ? t("rank.who", { who: t(`wz.role.${person.role}`), v: format[metric](value) }) : t("rank.you", { v: format[metric](value) })}</b>{takeHome(metric)} · {t("rank.median", { v: format[metric](s.p50) })}
                 </p>
               </>
             ) : (
               <p className="metric-foot">
-                <b>{t("rank.you", { v: format[metric](value) })}</b>{takeHome(metric)} · {t("rank.collecting", { n: s.n, min: stats.minGroupSize })}
+                <b>{individual ? t("rank.who", { who: t(`wz.role.${person.role}`), v: format[metric](value) }) : t("rank.you", { v: format[metric](value) })}</b>{takeHome(metric)} · {t("rank.collecting", { n: s.n, min: stats.minGroupSize })}
               </p>
             )}
           </div>

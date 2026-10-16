@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { HouseholdStats } from "./api";
 import type { LoadedBenchmark } from "./benchmark";
 import { compare, type LoanProfile } from "./compare";
+import { CoffeeCard } from "./CoffeeCard";
 import { FeedbackCard } from "./FeedbackCard";
 import { propertyBalance, VALUE_MIDPOINT, type Household, type Property } from "./household";
 import { HouseholdRanking } from "./HouseholdRanking";
@@ -73,15 +74,7 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
         </section>
       )}
 
-      <section className="card coffee">
-        <div>
-          <h3>{t("coffee.title")}</h3>
-          <p className="sub">{t("coffee.body")}</p>
-        </div>
-        <a className="secondary" href="https://buymeacoffee.com/tyah0510" target="_blank" rel="noopener noreferrer">
-          {t("coffee.button")}
-        </a>
-      </section>
+      <CoffeeCard lang={lang} />
 
       {analyses.length > 1 && (
         <div className="tabs property-tabs" role="tablist">

@@ -43,7 +43,7 @@ export function Simulator({ lang, profile, comparison: c, unlocked, onUnlockClic
         <ul className="sim-teaser">
           <li>{t("sim.teaser1")}</li>
           <li>{t("sim.teaser2")}</li>
-          <li>{t("sim.teaser3")}</li>
+          <li>{t("sim.teaser3", { total: c.lenders.length })}</li>
         </ul>
         <button className="primary" onClick={onUnlockClick}>
           {t("sim.unlock")}

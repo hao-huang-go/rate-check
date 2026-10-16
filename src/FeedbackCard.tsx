@@ -30,7 +30,7 @@ export function FeedbackCard({ lang, page, startOpen }: Props) {
 
   if (status === "done") {
     return (
-      <section className="card feedback">
+      <section className="card feedback" id="feedback">
         <h3>{t("fb.thanksTitle")}</h3>
         <p className="sub">{t("fb.thanks")}</p>
       </section>
@@ -56,7 +56,7 @@ export function FeedbackCard({ lang, page, startOpen }: Props) {
   }
 
   return (
-    <section className="card feedback">
+    <section className="card feedback" id="feedback">
       <h3>{t("fb.title")}</h3>
       <fieldset className="field">
         <legend className="sr-only">{t("fb.title")}</legend>

@@ -382,26 +382,36 @@ footer {
   font-weight: 700;
 }
 
-.coffee {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.coffee h3 {
+.coffee-text {
   margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
-.coffee .sub {
-  margin-top: 4px;
+.coffee-text b {
+  color: var(--accent);
 }
 
-.coffee a.secondary {
+.coffee-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-top: 14px;
+}
+
+.coffee-actions .secondary {
   margin: 0;
   text-decoration: none;
-  white-space: nowrap;
+}
+
+.link-muted {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
 }
 
 textarea {

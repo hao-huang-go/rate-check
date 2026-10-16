@@ -429,6 +429,17 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
               onPick={(offset) => updateProperty(s.property, { offset })}
               options={OFFSET_BANDS.map((v) => ({ value: v, label: v === "none" ? t("wz.prop.offsetNone") : moneyBand(v, lang) }))}
             />
+            <p className="wz-label">{t("wz.prop.interest")}</p>
+            <div className="money">
+              <input
+                id={`interest-${s.property}`}
+                inputMode="numeric"
+                placeholder={t("wz.prop.interestPlaceholder")}
+                value={p.interest ?? ""}
+                onChange={(e) => updateProperty(s.property, { interest: groupAmount(e.target.value) })}
+              />
+            </div>
+            <p className="note">{t("wz.prop.interestHint")}</p>
             <p className="wz-label">{t("propertyValue")}</p>
             <Choices value={p.value} onPick={(value) => updateProperty(s.property, { value })} options={VALUE_BANDS.map((v) => ({ value: v, label: moneyBand(v, lang) }))} />
           </>

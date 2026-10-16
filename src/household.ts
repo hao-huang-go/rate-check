@@ -60,6 +60,7 @@ export interface Property {
   monthly: MonthlyBand;
   balance: BalanceBand | null; // null when the borrower doesn't know it
   offset?: OffsetBand | null; // null or missing when not answered, counted as no offset
+  interest?: number | null; // AUD/month as the borrower entered it; estimated when missing
   value: ValueBand;
 }
 
@@ -85,9 +86,12 @@ export function propertyBalance(p: Pick<Property, "balance" | "monthly" | "rate"
   return Math.round(MONTHLY_MIDPOINT[p.monthly] / perDollar / 10_000) * 10_000;
 }
 
-// Interest charged this month: the rate on what's owed after the offset, which is what the
-// repayment doesn't say when a large offset is paying the loan down fast.
-export function propertyMonthlyInterest(p: Pick<Property, "balance" | "monthly" | "rate" | "repayment" | "offset">): number {
+// Interest charged this month: what the borrower entered, otherwise the rate on what's owed after
+// the offset, which is what the repayment doesn't say when a large offset is paying the loan down fast.
+export function propertyMonthlyInterest(
+  p: Pick<Property, "balance" | "monthly" | "rate" | "repayment" | "offset" | "interest">,
+): number {
+  if (p.interest) return p.interest;
   const owed = Math.max(0, propertyBalance(p) - OFFSET_MIDPOINT[p.offset ?? "none"]);
   return (owed * p.rate) / 12;
 }

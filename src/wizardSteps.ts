@@ -22,6 +22,7 @@ export interface DraftProperty {
   balance: BalanceBand | null;
   balanceUnknown: boolean;
   offset: OffsetBand | null;
+  interest: string; // as typed, AUD/month; blank to use the estimate
   value: ValueBand | null;
 }
 
@@ -69,6 +70,7 @@ export const newProperty = (purpose: Purpose | null = null): DraftProperty => ({
   balance: null,
   balanceUnknown: false,
   offset: null,
+  interest: "",
   value: null,
 });
 
@@ -167,6 +169,7 @@ export function toHousehold(draft: Draft): Household {
           monthly: p.monthly!,
           balance: p.balanceUnknown ? null : p.balance,
           offset: p.offset ?? null,
+          interest: parseNumber(p.interest ?? "") || null,
           value: p.value!,
         }))
       : [],

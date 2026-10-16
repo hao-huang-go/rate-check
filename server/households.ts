@@ -70,6 +70,7 @@ function parseProperty(raw: unknown): Property {
     monthly: pick(MONTHLY_BANDS, p.monthly, "monthly"),
     balance: p.balance === null || p.balance === undefined ? null : pick(BALANCE_BANDS, p.balance, "balance"),
     offset: p.offset === null || p.offset === undefined ? null : pick(OFFSET_BANDS, p.offset, "offset"),
+    interest: p.interest === null || p.interest === undefined ? null : Math.round(finite(p.interest, 0, 100_000, "interest")),
     value: pick(VALUE_BANDS, p.value, "value"),
   };
 }

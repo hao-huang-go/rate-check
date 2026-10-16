@@ -155,7 +155,11 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
               <span className="metric-title">{t(`rank.${metric}`)}</span>
               {ready(s) && <span className="metric-rank">{headline(metric, s)}</span>}
             </div>
-            {metric === "interest" && <p className="note">{t("rank.interestHow", { v: aud(totals.interest) })}</p>}
+            {metric === "interest" && (
+              <p className="note">
+                {t(household.properties.every((p) => p.interest) ? "rank.interestEntered" : "rank.interestHow", { v: aud(totals.interest) })}
+              </p>
+            )}
             {metric === "ratio" && (
               <p className={value > RATIO_GUIDE ? "ratio-guide over" : "ratio-guide"}>
                 {t(value > RATIO_GUIDE ? "rank.ratioOver" : "rank.ratioUnder")}

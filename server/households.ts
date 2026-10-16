@@ -205,21 +205,26 @@ export interface PeerTable {
 export interface HouseholdStats {
   minGroupSize: number;
   cohorts: Record<"all" | "age" | "group" | "state" | "band", Record<"income" | "repayment" | "ratio" | "interest" | "savings", MetricStats>>;
+  // Each earning member's own income, ranked against all individuals.
+  members: { position: number; cohorts: Record<"all" | "age" | "group" | "state" | "band", MetricStats> }[];
   rates: { position: number; stats: MetricStats }[];
   peers: PeerTable[];
 }
 
 export async function householdStats(db: SupabaseClient, id: string): Promise<HouseholdStats | null> {
-  const [stats, peers] = await Promise.all([
+  const [stats, peers, members] = await Promise.all([
     db.rpc("household_stats", { p_id: id }),
     db.rpc("peer_lenders", { p_id: id }),
+    db.rpc("member_income_stats", { p_id: id }),
   ]);
   if (stats.error) throw stats.error;
   if (peers.error) throw peers.error;
+  if (members.error) throw members.error;
   if (!stats.data) return null;
   return {
     minGroupSize: MIN_GROUP_SIZE,
-    ...(stats.data as Omit<HouseholdStats, "minGroupSize" | "peers">),
+    ...(stats.data as Omit<HouseholdStats, "minGroupSize" | "peers" | "members">),
     peers: (peers.data ?? []) as PeerTable[],
+    members: (members.data ?? []) as HouseholdStats["members"],
   };
 }

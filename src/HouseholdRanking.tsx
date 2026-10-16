@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type { HouseholdStats, MetricStats } from "./api";
-import { householdTotals, SAVINGS_BANDS, type Household } from "./household";
+import { householdTotals, roundIncome, SAVINGS_BANDS, type Household } from "./household";
 import { moneyBand } from "./bandLabels";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
+import { afterTax } from "./tax";
 
 interface Props {
   lang: Lang;
@@ -72,6 +73,12 @@ const ready = (s: MetricStats | undefined): s is Required<MetricStats> =>
 export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const [cohort, setCohort] = useState<Cohort>("all");
+  // Income can be ranked for the whole household or for one earning member on their own.
+  const [earner, setEarner] = useState<number | null>(null);
+  const earners = household.members
+    .map((m, position) => ({ role: m.role, position, income: roundIncome(m.income) }))
+    .filter((m) => m.income > 0 && stats.members?.some((s) => s.position === m.position));
+  const person = earner === null ? null : (earners.find((m) => m.position === earner) ?? null);
 
   const totals = householdTotals(household);
   const hasLoan = household.properties.length > 0;
@@ -120,8 +127,11 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
 
   const metrics: Metric[] = ["income", "repayment", "ratio", "interest", "savings"];
   // Tax is per person, so take-home is each member's after-tax income summed, not tax on the total.
-  const takeHome = (metric: Metric) =>
-    metric === "income" && totals.incomeAfterTax > 0 ? ` · ${t("rank.takeHome", { v: kFormat(totals.incomeAfterTax) })}` : "";
+  const takeHome = (metric: Metric) => {
+    if (metric !== "income") return "";
+    const net = person ? afterTax(person.income) : totals.incomeAfterTax;
+    return net > 0 ? ` · ${t("rank.takeHome", { v: kFormat(net) })}` : "";
+  };
 
   return (
     <section className="card ranking">
@@ -146,15 +156,31 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
       {cohortN < stats.minGroupSize && <p className="sub">{t("rank.waiting", { n: cohortN, min: stats.minGroupSize })}</p>}
 
       {metrics.map((metric) => {
-        const s = cohortStats[metric];
-        const value = mine[metric];
+        const individual = metric === "income" && person !== null;
+        const s = individual ? stats.members.find((m) => m.position === person.position)?.cohorts[cohort] : cohortStats[metric];
+        const value = individual ? person.income : mine[metric];
         if (value === null || !s) return null;
         return (
           <div key={metric} className="metric">
             <div className="metric-head">
-              <span className="metric-title">{t(`rank.${metric}`)}</span>
+              <span className="metric-title">{t(individual ? "rank.incomePerson" : `rank.${metric}`)}</span>
               {ready(s) && <span className="metric-rank">{headline(metric, s)}</span>}
             </div>
+            {metric === "income" && earners.length > 1 && (
+              <div className="segmented earner-switch" role="group" aria-label={t("rank.incomeWho")}>
+                {[null, ...earners.map((m) => m.position)].map((pos) => (
+                  <button
+                    key={pos ?? "household"}
+                    type="button"
+                    aria-pressed={earner === pos}
+                    className={earner === pos ? "on" : ""}
+                    onClick={() => setEarner(pos)}
+                  >
+                    {pos === null ? t("rank.whoHousehold") : t(`wz.role.${household.members[pos].role}`)}
+                  </button>
+                ))}
+              </div>
+            )}
             {metric === "interest" && (
               <p className="note">
                 {t(household.properties.every((p) => p.interest) ? "rank.interestEntered" : "rank.interestHow", { v: aud(totals.interest) })}

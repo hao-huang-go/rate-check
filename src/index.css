@@ -953,3 +953,12 @@ input[type="range"] {
   background: var(--accent-soft);
   font-weight: 700;
 }
+
+.earner-switch {
+  margin: 8px 0 4px;
+}
+
+.earner-switch button {
+  padding: 4px 12px;
+  font-size: 13px;
+}

@@ -9,7 +9,7 @@ const RESIDENCIES = ["pr", "visa", "overseas"] as const;
 const INCOMES = ["payg", "self"] as const;
 const MAX_SUBMISSIONS_PER_DAY = 5;
 // Below this many people in a group, percentiles would be noise and could single someone out.
-export const MIN_GROUP_SIZE = 5;
+export const MIN_GROUP_SIZE = 1;
 const LENDER_PATTERN = /^[\p{L}\p{N} .,&'()\-/]{1,80}$/u;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

@@ -99,7 +99,7 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
           shared={stats !== null}
           crowd={stats?.rates.find((r) => r.position === selected)?.stats ?? null}
           peers={stats?.peers.find((p) => p.position === selected) ?? null}
-          minGroupSize={stats?.minGroupSize ?? 5}
+          minGroupSize={stats?.minGroupSize ?? 1}
           onShareClick={() => document.getElementById("share")?.scrollIntoView({ behavior: "smooth", block: "start" })}
         />
       ) : (

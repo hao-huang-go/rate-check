@@ -26,8 +26,8 @@ const kFormat = (v: number) => (v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}
 function incomeBandLabel(income: number): string {
   const upper = INCOME_BAND_EDGES.findIndex((edge) => income < edge);
   if (upper === -1) return `${kFormat(INCOME_BAND_EDGES[INCOME_BAND_EDGES.length - 1])}+`;
-  const lo = upper === 0 ? 0 : INCOME_BAND_EDGES[upper - 1];
-  return `${kFormat(lo)}–${kFormat(INCOME_BAND_EDGES[upper]).slice(1)}`;
+  if (upper === 0) return `<${kFormat(INCOME_BAND_EDGES[0])}`;
+  return `${kFormat(INCOME_BAND_EDGES[upper - 1])}–${kFormat(INCOME_BAND_EDGES[upper]).slice(1)}`;
 }
 
 interface HistogramProps {

@@ -156,15 +156,37 @@ export interface MetricStats {
   hist?: number[];
 }
 
+export interface PeerRow {
+  lender: string;
+  n: number;
+  median: number;
+  min: number;
+}
+
+export interface PeerTable {
+  position: number;
+  band: { lo: number; hi: number | null };
+  rows: PeerRow[];
+}
+
 export interface HouseholdStats {
   minGroupSize: number;
   cohorts: Record<"all" | "age" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
   rates: { position: number; stats: MetricStats }[];
+  peers: PeerTable[];
 }
 
 export async function householdStats(db: SupabaseClient, id: string): Promise<HouseholdStats | null> {
-  const { data, error } = await db.rpc("household_stats", { p_id: id });
-  if (error) throw error;
-  if (!data) return null;
-  return { minGroupSize: MIN_GROUP_SIZE, ...(data as Omit<HouseholdStats, "minGroupSize">) };
+  const [stats, peers] = await Promise.all([
+    db.rpc("household_stats", { p_id: id }),
+    db.rpc("peer_lenders", { p_id: id }),
+  ]);
+  if (stats.error) throw stats.error;
+  if (peers.error) throw peers.error;
+  if (!stats.data) return null;
+  return {
+    minGroupSize: MIN_GROUP_SIZE,
+    ...(stats.data as Omit<HouseholdStats, "minGroupSize" | "peers">),
+    peers: (peers.data ?? []) as PeerTable[],
+  };
 }

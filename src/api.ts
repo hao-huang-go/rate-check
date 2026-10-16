@@ -46,10 +46,24 @@ export interface MetricStats {
   hist?: number[];
 }
 
+export interface PeerRow {
+  lender: string;
+  n: number;
+  median: number;
+  min: number;
+}
+
+export interface PeerTable {
+  position: number;
+  band: { lo: number; hi: number | null };
+  rows: PeerRow[];
+}
+
 export interface HouseholdStats {
   minGroupSize: number;
   cohorts: Record<"all" | "age" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
   rates: { position: number; stats: MetricStats }[];
+  peers: PeerTable[];
 }
 
 export interface HouseholdResult {

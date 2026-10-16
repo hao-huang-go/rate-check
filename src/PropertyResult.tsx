@@ -1,4 +1,5 @@
-import type { MetricStats } from "./api";
+import type { MetricStats, PeerTable } from "./api";
+import { PeerLenders } from "./PeerLenders";
 import type { Comparison, LoanProfile } from "./compare";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
@@ -11,12 +12,13 @@ interface Props {
   balanceEstimated: boolean;
   shared: boolean;
   crowd: MetricStats | null; // real participants with the same purpose and rate type
+  peers: PeerTable | null; // other households in the same income band, same kind of loan
   minGroupSize: number;
   onShareClick: () => void;
 }
 
 // One loan: how it compares with the market, and the rate simulator.
-export function PropertyResult({ lang, profile, comparison: c, balanceEstimated, shared, crowd, minGroupSize, onShareClick }: Props) {
+export function PropertyResult({ lang, profile, comparison: c, balanceEstimated, shared, crowd, peers, minGroupSize, onShareClick }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const total = c.lenders.length;
   const group = [
@@ -80,6 +82,15 @@ export function PropertyResult({ lang, profile, comparison: c, balanceEstimated,
           {balanceEstimated ? t("prop.estimateFromRepayment", { balance: aud(profile.balance) }) : t("prop.estimate")}
         </p>
       </section>
+
+      {peers && (
+        <PeerLenders
+          lang={lang}
+          table={peers}
+          ownLender={profile.lender}
+          loanLabel={[t(`purpose.${profile.purpose}`), profile.rateKind === "V" ? t("rateKind.V") : t("rateKind.F", { n: profile.rateKind.slice(1) })].join(" · ")}
+        />
+      )}
 
       <Simulator lang={lang} profile={profile} comparison={c} unlocked={shared} onUnlockClick={onShareClick} />
 

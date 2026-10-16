@@ -98,6 +98,7 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
           balanceEstimated={household.properties[selected].balance === null}
           shared={stats !== null}
           crowd={stats?.rates.find((r) => r.position === selected)?.stats ?? null}
+          peers={stats?.peers.find((p) => p.position === selected) ?? null}
           minGroupSize={stats?.minGroupSize ?? 5}
           onShareClick={() => document.getElementById("share")?.scrollIntoView({ behavior: "smooth", block: "start" })}
         />

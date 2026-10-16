@@ -909,3 +909,40 @@ input[type="range"] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.peer-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.peer-table th {
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+}
+
+.peer-table td {
+  padding: 9px 4px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+}
+
+.peer-table th:first-child,
+.peer-table td:first-child {
+  text-align: left;
+}
+
+.peer-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.peer-table .own-row td {
+  background: var(--accent-soft);
+  font-weight: 700;
+}

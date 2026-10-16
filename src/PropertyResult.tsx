@@ -1,16 +1,13 @@
 import type { MetricStats } from "./api";
-import { Breakdown } from "./Breakdown";
-import type { Breakdown as BreakdownData, Comparison, LoanProfile } from "./compare";
+import type { Comparison, LoanProfile } from "./compare";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
-import { NegotiationCard } from "./NegotiationCard";
 import { Simulator } from "./Simulator";
 
 interface Props {
   lang: Lang;
   profile: LoanProfile;
   comparison: Comparison;
-  breakdown: BreakdownData;
   balanceEstimated: boolean;
   shared: boolean;
   crowd: MetricStats | null; // real participants with the same purpose and rate type
@@ -18,8 +15,8 @@ interface Props {
   onShareClick: () => void;
 }
 
-// One loan: how it compares with the market, the simulator, what each condition costs, how to negotiate.
-export function PropertyResult({ lang, profile, comparison: c, breakdown, balanceEstimated, shared, crowd, minGroupSize, onShareClick }: Props) {
+// One loan: how it compares with the market, and the rate simulator.
+export function PropertyResult({ lang, profile, comparison: c, balanceEstimated, shared, crowd, minGroupSize, onShareClick }: Props) {
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const total = c.lenders.length;
   const group = [
@@ -85,10 +82,6 @@ export function PropertyResult({ lang, profile, comparison: c, breakdown, balanc
       </section>
 
       <Simulator lang={lang} profile={profile} comparison={c} unlocked={shared} onUnlockClick={onShareClick} />
-
-      <Breakdown lang={lang} profile={profile} data={breakdown} />
-
-      {c.overpayVsP10 > 0 && <NegotiationCard lang={lang} profile={profile} comparison={c} />}
 
     </>
   );

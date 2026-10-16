@@ -118,7 +118,9 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
             className={cohort === tab.key ? "on" : ""}
             onClick={() => setCohort(tab.key)}
           >
-            {tab.label}
+            <span className="tab-label" title={tab.label}>
+              {tab.label}
+            </span>
             <small>{t("rank.people", { n: stats.cohorts[tab.key].income.n })}</small>
           </button>
         ))}

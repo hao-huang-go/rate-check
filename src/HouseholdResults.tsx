@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { HouseholdStats } from "./api";
 import type { LoadedBenchmark } from "./benchmark";
-import { breakdown, compare, type LoanProfile } from "./compare";
+import { compare, type LoanProfile } from "./compare";
 import { FeedbackCard } from "./FeedbackCard";
 import { propertyBalance, VALUE_MIDPOINT, type Household, type Property } from "./household";
 import { HouseholdRanking } from "./HouseholdRanking";
@@ -51,7 +51,7 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
     () =>
       household.properties.map((p) => {
         const profile = profileFor(p, household);
-        return { profile, comparison: compare(benchmark, profile), breakdown: breakdown(benchmark, profile) };
+        return { profile, comparison: compare(benchmark, profile) };
       }),
     [benchmark, household],
   );
@@ -92,7 +92,6 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
           lang={lang}
           profile={current.profile}
           comparison={current.comparison}
-          breakdown={current.breakdown}
           balanceEstimated={household.properties[selected].balance === null}
           shared={stats !== null}
           crowd={stats?.rates.find((r) => r.position === selected)?.stats ?? null}

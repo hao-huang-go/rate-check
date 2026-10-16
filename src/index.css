@@ -345,16 +345,6 @@ footer {
   color: var(--muted);
 }
 
-.script {
-  margin: 12px 0 0;
-  padding: 12px 14px;
-  border-left: 3px solid var(--accent);
-  background: var(--bg);
-  border-radius: 0 10px 10px 0;
-  font-size: 14px;
-  user-select: all;
-}
-
 .notice {
   border-color: var(--warn);
   background: var(--warn-soft);
@@ -382,108 +372,14 @@ footer {
   font-size: 14px;
 }
 
-.report {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-}
-
-.report-toggle {
-  margin: 14px 0 0;
-}
-
 .done {
   margin-top: 16px;
   color: var(--accent);
 }
 
-.bd-head,
-.bd-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px 76px 64px;
-  align-items: center;
-  gap: 8px;
-}
-
-.bd-head span {
-  font-size: 11px;
-  color: var(--muted);
-  text-align: right;
-}
-
-.bd-group {
-  margin-top: 10px;
-}
-
-.bd-title {
-  margin: 0 0 2px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.bd-row {
-  padding: 4px 6px;
-  margin: 0 -6px;
-  border-radius: 8px;
-  font-size: 13px;
-}
-
 .bd-row.current {
   background: var(--accent-soft);
   font-weight: 700;
-}
-
-.bd-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bd-head.no-own,
-.bd-row.no-own {
-  grid-template-columns: minmax(0, 1fr) 64px 64px;
-}
-
-.bd-head .own-col {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.bd-num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.bd-num.muted {
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.bd-diff {
-  color: var(--muted);
-}
-
-.bd-diff.up {
-  color: var(--warn);
-}
-
-.bd-diff.down {
-  color: var(--accent);
-}
-
-.script-wrap {
-  margin-top: 12px;
-}
-
-.script-wrap summary {
-  cursor: pointer;
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 14px;
 }
 
 .coffee {
@@ -859,14 +755,14 @@ input[type="range"] {
 /* ranking */
 
 .tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 6px;
-  overflow-x: auto;
   margin-bottom: 4px;
 }
 
 .tabs button {
-  flex: 1 0 auto;
+  min-width: 0;
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--text);
@@ -875,6 +771,9 @@ input[type="range"] {
   font-size: 14px;
   font-weight: 600;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tabs button small {
@@ -993,4 +892,10 @@ input[type="range"] {
 .converted {
   margin-top: 8px;
   color: var(--accent);
+}
+
+.tab-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -1,4 +1,3 @@
-import { lvrBand } from "./bands.js";
 import { PRODUCT_FLAGS } from "./benchmarkWire.js";
 
 export type Purpose = "OO" | "INV";
@@ -128,71 +127,5 @@ export function compare(benchmark: Benchmark, profile: LoanProfile): Comparison 
     overpayVsP10: annualOverpay(profile.rate, p10, profile.balance),
     ownLender,
     overpayVsOwnLender: ownLender ? annualOverpay(profile.rate, ownLender.rate, profile.balance) : 0,
-  };
-}
-
-export interface BreakdownRow {
-  key: string; // what varies: an LVR value, rate kind, purpose, repayment, or offset flag
-  median: number;
-  own: number | null; // the borrower's own lender's best rate under this condition
-  lenders: number;
-  current: boolean;
-}
-
-export interface Breakdown {
-  lvr: BreakdownRow[];
-  rateKind: BreakdownRow[];
-  offset: BreakdownRow[];
-  purpose: BreakdownRow[];
-  repayment: BreakdownRow[];
-}
-
-// Representative LVR inside each band, used to price "what if my LVR were in this band".
-const LVR_POINTS: [key: string, lvr: number][] = [
-  ["0-60", 0.55],
-  ["60-70", 0.65],
-  ["70-80", 0.75],
-  ["80-90", 0.85],
-  ["90-95", 0.92],
-];
-
-function rowFor(benchmark: Benchmark, profile: LoanProfile, key: string, current: boolean): BreakdownRow | null {
-  const lenders = cheapestPerLender(
-    benchmark.rows.filter((row) => matches(row, profile, lvrOf(profile))),
-  );
-  if (!lenders.length) return null;
-  const rates = lenders.map((l) => l.rate);
-  const own = lenders.find((l) => l.lender === profile.lender)?.rate ?? null;
-  return { key, median: quantile(rates, 0.5), own, lenders: lenders.length, current };
-}
-
-// Varies one criterion at a time, holding the rest of the profile fixed.
-export function breakdown(benchmark: Benchmark, profile: LoanProfile): Breakdown {
-  const lvr = lvrOf(profile);
-  const vary = (rows: (BreakdownRow | null)[]) => rows.filter((r): r is BreakdownRow => r !== null);
-  return {
-    lvr: vary(
-      LVR_POINTS.map(([key, point]) =>
-        rowFor(benchmark, { ...profile, propertyValue: profile.balance / point }, key, lvrBand(lvr) === key),
-      ),
-    ),
-    rateKind: vary(
-      (["V", "F1", "F2", "F3", "F5"] as RateKind[]).map((k) =>
-        rowFor(benchmark, { ...profile, rateKind: k }, k, k === profile.rateKind),
-      ),
-    ),
-    offset: vary(
-      [false, true].map((need) =>
-        rowFor(benchmark, { ...profile, needOffset: need }, need ? "yes" : "no", need === profile.needOffset),
-      ),
-    ),
-    purpose: vary(
-      (["OO", "INV"] as Purpose[]).map((u) => rowFor(benchmark, { ...profile, purpose: u }, u, u === profile.purpose)),
-    ),
-    repayment: vary(
-      (["PI", "IO"] as Repayment[]).map((r) =>
-        rowFor(benchmark, { ...profile, repayment: r }, r, r === profile.repayment),
-      ),
-    ),
   };
 }

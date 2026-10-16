@@ -1,30 +1,5 @@
 import type { Household } from "./household";
 
-export type NegotiationMethod = "asked" | "named_rate" | "discharge" | "refinanced";
-
-export interface OutcomeStats {
-  n: number;
-  gotCutPct: number;
-  medianCut: number | null;
-}
-
-export interface NegotiationStats {
-  minGroupSize: number;
-  lender: OutcomeStats | null;
-  all: OutcomeStats | null;
-  byMethod: Partial<Record<NegotiationMethod, { n: number; gotCutPct: number }>>;
-}
-
-export interface NegotiationReportInput {
-  lender: string;
-  beforeRate: number;
-  afterRate: number;
-  method: NegotiationMethod;
-  purpose: string;
-  rateKind: string;
-  residency: string;
-}
-
 export type FeedbackWant = "net_worth" | "rate_alerts" | "fixed_expiry" | "broker_compare" | "investor" | "other";
 
 export interface FeedbackInput {
@@ -47,20 +22,6 @@ async function json<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(body.error ?? "server");
   return body as T;
-}
-
-export async function fetchNegotiationStats(lender: string): Promise<NegotiationStats> {
-  return json(await fetch(`/api/negotiation?lender=${encodeURIComponent(lender)}`));
-}
-
-export async function reportNegotiation(input: NegotiationReportInput): Promise<NegotiationStats> {
-  return json(
-    await fetch("/api/negotiation", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input),
-    }),
-  );
 }
 
 export async function sendFeedback(input: FeedbackInput): Promise<void> {

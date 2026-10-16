@@ -362,15 +362,14 @@ export function translate(lang: Lang, key: MessageKey, vars: Record<string, stri
 
 const LANG_KEY = "rate-check.lang";
 
-// A choice made on the toggle wins over the browser language.
+// Chinese by default; English only when the visitor has picked it on the toggle.
 export function detectLang(): Lang {
   try {
-    const saved = localStorage.getItem(LANG_KEY);
-    if (saved === "zh" || saved === "en") return saved;
+    if (localStorage.getItem(LANG_KEY) === "en") return "en";
   } catch {
-    // storage blocked: fall back to the browser language
+    // storage blocked: stay on the default
   }
-  return navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
+  return "zh";
 }
 
 export function saveLang(lang: Lang): void {

@@ -3,6 +3,7 @@ export type Lang = "zh" | "en";
 const zh = {
   title: "你在澳洲什么水平？",
   subtitle: "匿名比一比收入、存款和房贷，看看自己在同龄人、同行、同州里排第几",
+  participants: "已有 {n} 个家庭参与",
   residency: "你的身份",
   "residency.pr": "公民 / PR",
   "residency.visa": "临时签证",
@@ -180,6 +181,7 @@ const zh = {
 const en: typeof zh = {
   title: "How Do You Compare?",
   subtitle: "Compare your income, savings and mortgage anonymously with people your age, in your field and in your state",
+  participants: "{n} households so far",
   residency: "Residency",
   "residency.pr": "Citizen / PR",
   "residency.visa": "Temporary visa",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError, fetchHouseholdStats, submitHousehold, type HouseholdStats } from "./api";
+import { ApiError, fetchHouseholdStats, fetchParticipantCount, submitHousehold, type HouseholdStats } from "./api";
 import { loadBenchmark, type LoadedBenchmark } from "./benchmark";
 import { FeedbackCard } from "./FeedbackCard";
 import { householdTotals, type Household } from "./household";
@@ -22,10 +22,12 @@ export default function App() {
   const [saved, setSaved] = useState<SavedHousehold | null>(loadSavedHousehold);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [participants, setParticipants] = useState<number | null>(null);
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
 
   useEffect(() => {
     loadBenchmark().then(setBenchmark);
+    fetchParticipantCount().then(setParticipants);
   }, []);
 
   useEffect(() => {
@@ -90,6 +92,7 @@ export default function App() {
         <div>
           <h1>{t("title")}</h1>
           <p className="subtitle">{t("subtitle")}</p>
+          {!!participants && <p className="participants">{t("participants", { n: participants })}</p>}
         </div>
         <button
           className="lang"

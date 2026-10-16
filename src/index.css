@@ -69,6 +69,13 @@ h1 {
   color: var(--muted);
 }
 
+.participants {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 h3 {
   margin: 24px 0 8px;
   font-size: 15px;

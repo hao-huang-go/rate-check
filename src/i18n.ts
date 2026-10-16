@@ -395,7 +395,10 @@ export function translate(lang: Lang, key: MessageKey, vars: Record<string, stri
 const LANG_KEY = "rate-check.lang";
 
 // Chinese by default; English only when the visitor has picked it on the toggle.
+// Chinese by default; English when the link asks for it (?lang=en) or the visitor chose it before.
 export function detectLang(): Lang {
+  const fromLink = new URLSearchParams(window.location.search).get("lang");
+  if (fromLink === "en" || fromLink === "zh") return fromLink;
   try {
     if (localStorage.getItem(LANG_KEY) === "en") return "en";
   } catch {

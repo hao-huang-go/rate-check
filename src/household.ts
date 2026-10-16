@@ -1,5 +1,5 @@
 // Household questionnaire: answer options and their bands, shared by the wizard and the API.
-import { lvrBand, type BalanceBand, type LvrBand } from "./bands.js";
+import { lvrBand, type BalanceBand, type LvrBand, type OffsetBand } from "./bands.js";
 import { monthlyRepayment } from "./simulate.js";
 import { afterTax } from "./tax.js";
 import type { Purpose, RateKind, Repayment, Residency } from "./compare.js";
@@ -25,6 +25,10 @@ export const MONTHLY_MIDPOINT: Record<MonthlyBand, number> = {
 // Loan balance and property value are asked as ranges; the midpoints feed the rate comparison.
 export const BALANCE_MIDPOINT: Record<BalanceBand, number> = {
   "0-300k": 200_000, "300k-500k": 400_000, "500k-750k": 625_000, "750k-1m": 875_000, "1m-1.5m": 1_250_000, "1.5m+": 1_800_000,
+};
+
+export const OFFSET_MIDPOINT: Record<OffsetBand, number> = {
+  none: 0, "0-50k": 25_000, "50k-100k": 75_000, "100k-200k": 150_000, "200k-500k": 350_000, "500k+": 600_000,
 };
 
 export const VALUE_BANDS = ["0-500k", "500k-750k", "750k-1m", "1m-1.5m", "1.5m-2m", "2m-3m", "3m+"] as const;
@@ -55,6 +59,7 @@ export interface Property {
   repayment: Repayment;
   monthly: MonthlyBand;
   balance: BalanceBand | null; // null when the borrower doesn't know it
+  offset?: OffsetBand | null; // null or missing when not answered, counted as no offset
   value: ValueBand;
 }
 
@@ -80,6 +85,13 @@ export function propertyBalance(p: Pick<Property, "balance" | "monthly" | "rate"
   return Math.round(MONTHLY_MIDPOINT[p.monthly] / perDollar / 10_000) * 10_000;
 }
 
+// Interest charged this month: the rate on what's owed after the offset, which is what the
+// repayment doesn't say when a large offset is paying the loan down fast.
+export function propertyMonthlyInterest(p: Pick<Property, "balance" | "monthly" | "rate" | "repayment" | "offset">): number {
+  const owed = Math.max(0, propertyBalance(p) - OFFSET_MIDPOINT[p.offset ?? "none"]);
+  return (owed * p.rate) / 12;
+}
+
 type LvrInput = Pick<Property, "balance" | "monthly" | "rate" | "repayment" | "value">;
 
 export function propertyLvr(p: LvrInput): number {
@@ -96,5 +108,6 @@ export function householdTotals(h: Pick<Household, "members" | "properties">) {
     income: h.members.reduce((sum, m) => sum + roundIncome(m.income), 0),
     incomeAfterTax: Math.round(h.members.reduce((sum, m) => sum + afterTax(roundIncome(m.income)), 0)),
     repayment: h.properties.reduce((sum, p) => sum + MONTHLY_MIDPOINT[p.monthly], 0),
+    interest: Math.round(h.properties.reduce((sum, p) => sum + propertyMonthlyInterest(p), 0) / 10) * 10,
   };
 }

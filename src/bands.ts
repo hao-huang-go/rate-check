@@ -7,6 +7,10 @@ export type LvrBand = (typeof LVR_BANDS)[number];
 export const BALANCE_BANDS = ["0-300k", "300k-500k", "500k-750k", "750k-1m", "1m-1.5m", "1.5m+"] as const;
 export type BalanceBand = (typeof BALANCE_BANDS)[number];
 
+// Money sitting in offset accounts against the loan; "none" when there isn't any.
+export const OFFSET_BANDS = ["none", "0-50k", "50k-100k", "100k-200k", "200k-500k", "500k+"] as const;
+export type OffsetBand = (typeof OFFSET_BANDS)[number];
+
 export const LOAN_AGES = ["<1y", "1-3y", "3-5y", "5y+"] as const;
 export type LoanAge = (typeof LOAN_AGES)[number];
 

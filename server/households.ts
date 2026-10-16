@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { BALANCE_BANDS } from "../src/bands.js";
+import { BALANCE_BANDS, OFFSET_BANDS } from "../src/bands.js";
 import {
   AGE_BANDS,
   EXPERIENCE,
@@ -69,6 +69,7 @@ function parseProperty(raw: unknown): Property {
     repayment: pick(REPAYMENTS, p.repayment, "repayment"),
     monthly: pick(MONTHLY_BANDS, p.monthly, "monthly"),
     balance: p.balance === null || p.balance === undefined ? null : pick(BALANCE_BANDS, p.balance, "balance"),
+    offset: p.offset === null || p.offset === undefined ? null : pick(OFFSET_BANDS, p.offset, "offset"),
     value: pick(VALUE_BANDS, p.value, "value"),
   };
 }
@@ -107,6 +108,7 @@ function toRow(h: Household) {
     income_after_tax_total: totals.incomeAfterTax,
     primary_group: h.members[0].occupation.slice(0, 2),
     repayment_total: totals.repayment,
+    interest_total: h.properties.length ? totals.interest : null,
     property_count: h.properties.length,
     savings_band: h.savings,
     member_rows: h.members.map((m, position) => ({
@@ -125,6 +127,7 @@ function toRow(h: Household) {
       repayment_type: p.repayment,
       monthly_band: p.monthly,
       balance_band: p.balance,
+      offset_band: p.offset ?? null,
       lvr_band: propertyLvrBand(p),
     })),
   };
@@ -171,7 +174,7 @@ export interface PeerTable {
 
 export interface HouseholdStats {
   minGroupSize: number;
-  cohorts: Record<"all" | "age" | "group" | "state", Record<"income" | "repayment" | "ratio" | "savings", MetricStats>>;
+  cohorts: Record<"all" | "age" | "group" | "state" | "band", Record<"income" | "repayment" | "ratio" | "interest" | "savings", MetricStats>>;
   rates: { position: number; stats: MetricStats }[];
   peers: PeerTable[];
 }

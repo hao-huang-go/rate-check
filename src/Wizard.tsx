@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BALANCE_BANDS } from "./bands";
+import { BALANCE_BANDS, OFFSET_BANDS } from "./bands";
 import { moneyBand, yearsBand } from "./bandLabels";
 import type { Lender } from "./benchmark";
 import type { RateKind } from "./compare";
@@ -422,6 +422,12 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
                 ...BALANCE_BANDS.map((v) => ({ value: v, label: moneyBand(v, lang) })),
                 { value: "unknown" as const, label: t("wz.prop.balanceUnknown") },
               ]}
+            />
+            <p className="wz-label">{t("wz.prop.offset")}</p>
+            <Choices
+              value={p.offset ?? null}
+              onPick={(offset) => updateProperty(s.property, { offset })}
+              options={OFFSET_BANDS.map((v) => ({ value: v, label: v === "none" ? t("wz.prop.offsetNone") : moneyBand(v, lang) }))}
             />
             <p className="wz-label">{t("propertyValue")}</p>
             <Choices value={p.value} onPick={(value) => updateProperty(s.property, { value })} options={VALUE_BANDS.map((v) => ({ value: v, label: moneyBand(v, lang) }))} />

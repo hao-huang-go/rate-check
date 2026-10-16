@@ -12,13 +12,23 @@ interface Props {
   groupLabel: string;
 }
 
-type Cohort = "all" | "age" | "group" | "state";
-type Metric = "income" | "repayment" | "ratio" | "savings";
+type Cohort = "all" | "age" | "group" | "state" | "band";
+type Metric = "income" | "repayment" | "ratio" | "interest" | "savings";
 
 // Common rule of thumb: repayments under 30% of take-home pay.
 const RATIO_GUIDE = 0.3;
 
+// Same household-income bands the server groups by (income_band_bounds).
+const INCOME_BAND_EDGES = [60_000, 90_000, 120_000, 160_000, 200_000, 250_000, 300_000, 400_000];
+
 const kFormat = (v: number) => (v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}m` : `$${Math.round(v / 1000)}k`);
+
+function incomeBandLabel(income: number): string {
+  const upper = INCOME_BAND_EDGES.findIndex((edge) => income < edge);
+  if (upper === -1) return `${kFormat(INCOME_BAND_EDGES[INCOME_BAND_EDGES.length - 1])}+`;
+  const lo = upper === 0 ? 0 : INCOME_BAND_EDGES[upper - 1];
+  return `${kFormat(lo)}–${kFormat(INCOME_BAND_EDGES[upper]).slice(1)}`;
+}
 
 interface HistogramProps {
   stats: Required<Pick<MetricStats, "hist" | "lo" | "hi" | "p25" | "p50" | "p75">>;
@@ -69,22 +79,25 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
     income: totals.income,
     repayment: hasLoan ? totals.repayment : null,
     ratio: hasLoan && totals.incomeAfterTax > 0 ? (totals.repayment * 12) / totals.incomeAfterTax : null,
+    interest: hasLoan && totals.incomeAfterTax > 0 ? (totals.interest * 12) / totals.incomeAfterTax : null,
     savings: household.savings ? SAVINGS_BANDS.indexOf(household.savings) + 1 : null,
   };
 
-  const cohortStats = stats.cohorts[cohort];
+  const cohortStats = stats.cohorts[cohort] ?? stats.cohorts.all;
   const cohortN = cohortStats.income.n;
   const tabs: { key: Cohort; label: string }[] = [
     { key: "all", label: t("rank.all") },
     { key: "age", label: t("rank.ageTab", { age: household.age }) },
     { key: "group", label: groupLabel || t("rank.group") },
     { key: "state", label: household.state },
+    { key: "band", label: t("rank.bandTab", { band: incomeBandLabel(totals.income) }) },
   ];
 
   const format: Record<Metric, (v: number) => string> = {
     income: kFormat,
     repayment: (v) => aud(v),
     ratio: (v) => pct(v, 0),
+    interest: (v) => pct(v, 0),
     savings: (v) => moneyBand(SAVINGS_BANDS[Math.min(6, Math.max(0, Math.round(v) - 1))], lang),
   };
 
@@ -100,11 +113,12 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
       case "repayment":
         return t("rank.repaymentRank", { n: Math.round(lowerShare * 100) });
       case "ratio":
+      case "interest":
         return t("rank.ratioRank", { n: Math.round(higherShare * 100) });
     }
   }
 
-  const metrics: Metric[] = ["income", "repayment", "ratio", "savings"];
+  const metrics: Metric[] = ["income", "repayment", "ratio", "interest", "savings"];
   // Tax is per person, so take-home is each member's after-tax income summed, not tax on the total.
   const takeHome = (metric: Metric) =>
     metric === "income" && totals.incomeAfterTax > 0 ? ` · ${t("rank.takeHome", { v: kFormat(totals.incomeAfterTax) })}` : "";
@@ -124,7 +138,7 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
             <span className="tab-label" title={tab.label}>
               {tab.label}
             </span>
-            <small>{t("rank.people", { n: stats.cohorts[tab.key].income.n })}</small>
+            <small>{t("rank.people", { n: stats.cohorts[tab.key]?.income.n ?? 0 })}</small>
           </button>
         ))}
       </div>
@@ -134,13 +148,14 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
       {metrics.map((metric) => {
         const s = cohortStats[metric];
         const value = mine[metric];
-        if (value === null) return null;
+        if (value === null || !s) return null;
         return (
           <div key={metric} className="metric">
             <div className="metric-head">
               <span className="metric-title">{t(`rank.${metric}`)}</span>
               {ready(s) && <span className="metric-rank">{headline(metric, s)}</span>}
             </div>
+            {metric === "interest" && <p className="note">{t("rank.interestHow", { v: aud(totals.interest) })}</p>}
             {metric === "ratio" && (
               <p className={value > RATIO_GUIDE ? "ratio-guide over" : "ratio-guide"}>
                 {t(value > RATIO_GUIDE ? "rank.ratioOver" : "rank.ratioUnder")}

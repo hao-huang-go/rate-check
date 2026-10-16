@@ -1,4 +1,4 @@
-import type { BalanceBand } from "./bands";
+import type { BalanceBand, OffsetBand } from "./bands";
 import type { Purpose, RateKind, Repayment, Residency } from "./compare";
 import type { AgeBand, AuState, Experience, Household, MonthlyBand, Role, SavingsBand, ValueBand } from "./household";
 import { grossFromAfterTax } from "./tax";
@@ -21,6 +21,7 @@ export interface DraftProperty {
   monthly: MonthlyBand | null;
   balance: BalanceBand | null;
   balanceUnknown: boolean;
+  offset: OffsetBand | null;
   value: ValueBand | null;
 }
 
@@ -67,6 +68,7 @@ export const newProperty = (purpose: Purpose | null = null): DraftProperty => ({
   monthly: null,
   balance: null,
   balanceUnknown: false,
+  offset: null,
   value: null,
 });
 
@@ -164,6 +166,7 @@ export function toHousehold(draft: Draft): Household {
           repayment: p.repayment,
           monthly: p.monthly!,
           balance: p.balanceUnknown ? null : p.balance,
+          offset: p.offset ?? null,
           value: p.value!,
         }))
       : [],

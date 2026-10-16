@@ -127,6 +127,12 @@ export function hashIp(ip: string, salt: string, day: string): string {
   return createHash("sha256").update(`${salt}|${day}|${ip}`).digest("hex");
 }
 
+// Not salted by day: the same device stays the same device. Null when the header is missing or malformed.
+export function hashDevice(deviceId: string | null, salt: string): string | null {
+  if (!deviceId || !/^[0-9a-f-]{36}$/i.test(deviceId)) return null;
+  return createHash("sha256").update(`${salt}|device|${deviceId.toLowerCase()}`).digest("hex");
+}
+
 export function clientIp(request: Request): string {
   return (
     request.headers.get("x-real-ip") ??

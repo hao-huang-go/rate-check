@@ -20,6 +20,8 @@ export default function App() {
   const [draft, setDraft] = useState<Draft>(() => loadDraft() ?? emptyDraft());
   const [results, setResults] = useState<ResultsState | null>(null);
   const [saved, setSaved] = useState<SavedHousehold | null>(loadSavedHousehold);
+  // A returning visitor goes straight to their results with fresh rankings, not the questionnaire.
+  const [restoring, setRestoring] = useState(() => loadSavedHousehold() !== null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [participants, setParticipants] = useState<number | null>(null);
@@ -39,7 +41,21 @@ export default function App() {
     saveDraft(draft);
   }, [draft]);
 
+  useEffect(() => {
+    const s = loadSavedHousehold();
+    if (!s) return;
+    fetchHouseholdStats(s.id)
+      .then((result) => setResults({ household: s.household, stats: result.stats }))
+      .catch(() => setResults({ household: s.household, stats: null }))
+      .finally(() => setRestoring(false));
+  }, []);
+
   async function share(household: Household) {
+    // One submission per device: show the one already made instead of sending another.
+    if (saved) {
+      await openSaved(saved);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -48,7 +64,8 @@ export default function App() {
       setResults({ household, stats: result.stats });
       window.scrollTo({ top: 0 });
     } catch (e) {
-      setError(t(e instanceof ApiError && e.code === "rate_limited" ? "share.rateLimited" : "share.error"));
+      const code = e instanceof ApiError ? e.code : "server";
+      setError(t(code === "rate_limited" ? "share.rateLimited" : code === "already_submitted" ? "share.alreadySubmitted" : "share.error"));
     } finally {
       setBusy(false);
     }
@@ -106,7 +123,7 @@ export default function App() {
         </button>
       </header>
 
-      {!benchmark ? (
+      {!benchmark || restoring ? (
         <div className="card loading" />
       ) : results ? (
         <HouseholdResults

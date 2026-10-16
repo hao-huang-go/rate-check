@@ -134,7 +134,32 @@ function toRow(h: Household) {
   };
 }
 
-export async function insertHousehold(db: SupabaseClient, h: Household, ipHash: string, day: string): Promise<string> {
+export class AlreadySubmittedError extends Error {
+  readonly id: string;
+
+  constructor(id: string) {
+    super("already_submitted");
+    this.id = id;
+  }
+}
+
+async function findByDevice(db: SupabaseClient, deviceHash: string): Promise<string | null> {
+  const { data, error } = await db.from("households").select("id").eq("device_hash", deviceHash).limit(1);
+  if (error) throw error;
+  return data?.[0]?.id ?? null;
+}
+
+export async function insertHousehold(
+  db: SupabaseClient,
+  h: Household,
+  ipHash: string,
+  deviceHash: string | null,
+  day: string,
+): Promise<string> {
+  if (deviceHash) {
+    const existing = await findByDevice(db, deviceHash);
+    if (existing) throw new AlreadySubmittedError(existing);
+  }
   const { count, error: countError } = await db
     .from("households")
     .select("id", { count: "exact", head: true })
@@ -143,7 +168,11 @@ export async function insertHousehold(db: SupabaseClient, h: Household, ipHash: 
   if (countError) throw countError;
   if ((count ?? 0) >= MAX_PER_DAY) throw new RateLimitError();
 
-  const { data, error } = await db.rpc("submit_household", { p: toRow(h), p_ip_hash: ipHash });
+  const { data, error } = await db.rpc("submit_household", { p: { ...toRow(h), device_hash: deviceHash }, p_ip_hash: ipHash });
+  if (error?.code === "23505" && deviceHash) {
+    const existing = await findByDevice(db, deviceHash);
+    if (existing) throw new AlreadySubmittedError(existing);
+  }
   if (error) throw error;
   return data as string;
 }

@@ -1,5 +1,5 @@
-import { householdStats, insertHousehold, parseHousehold } from "../server/households.js";
-import { clientIp, hashIp, InputError, parseSubmissionId, RateLimitError } from "../server/submissions.js";
+import { AlreadySubmittedError, householdStats, insertHousehold, parseHousehold } from "../server/households.js";
+import { clientIp, hashDevice, hashIp, InputError, parseSubmissionId, RateLimitError } from "../server/submissions.js";
 import { supabaseFromEnv } from "../server/supabase.js";
 
 export async function POST(request: Request): Promise<Response> {
@@ -13,12 +13,15 @@ export async function POST(request: Request): Promise<Response> {
 
   const db = supabaseFromEnv();
   const day = new Date().toISOString().slice(0, 10);
-  const ipHash = hashIp(clientIp(request), process.env.IP_HASH_SALT ?? "", day);
+  const salt = process.env.IP_HASH_SALT ?? "";
+  const ipHash = hashIp(clientIp(request), salt, day);
+  const deviceHash = hashDevice(request.headers.get("x-device-id"), salt);
   try {
-    const id = await insertHousehold(db, household, ipHash, day);
+    const id = await insertHousehold(db, household, ipHash, deviceHash, day);
     return Response.json({ id, stats: await householdStats(db, id) });
   } catch (e) {
     if (e instanceof RateLimitError) return Response.json({ error: "rate_limited" }, { status: 429 });
+    if (e instanceof AlreadySubmittedError) return Response.json({ error: "already_submitted", id: e.id }, { status: 409 });
     console.error("household submit failed", { errorType: e instanceof Error ? e.name : typeof e });
     return Response.json({ error: "server" }, { status: 500 });
   }

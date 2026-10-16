@@ -1,3 +1,4 @@
+import { deviceId } from "./device";
 import type { Household } from "./household";
 
 export type FeedbackWant = "net_worth" | "rate_alerts" | "fixed_expiry" | "broker_compare" | "investor" | "other";
@@ -11,16 +12,18 @@ export interface FeedbackInput {
 
 export class ApiError extends Error {
   readonly code: string;
+  readonly id: string | null; // the existing submission, for "already_submitted"
 
-  constructor(code: string) {
+  constructor(code: string, id: string | null = null) {
     super(code);
     this.code = code;
+    this.id = id;
   }
 }
 
 async function json<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(body.error ?? "server");
+  if (!res.ok) throw new ApiError(body.error ?? "server", typeof body.id === "string" ? body.id : null);
   return body as T;
 }
 
@@ -75,7 +78,7 @@ export async function submitHousehold(household: Household): Promise<HouseholdRe
   return json(
     await fetch("/api/household", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-device-id": deviceId() },
       body: JSON.stringify(household),
     }),
   );

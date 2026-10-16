@@ -105,6 +105,9 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
   }
 
   const metrics: Metric[] = ["income", "repayment", "ratio", "savings"];
+  // Tax is per person, so take-home is each member's after-tax income summed, not tax on the total.
+  const takeHome = (metric: Metric) =>
+    metric === "income" && totals.incomeAfterTax > 0 ? ` · ${t("rank.takeHome", { v: kFormat(totals.incomeAfterTax) })}` : "";
 
   return (
     <section className="card ranking">
@@ -147,12 +150,12 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
               <>
                 <Histogram stats={s} mine={value} format={format[metric]} />
                 <p className="metric-foot">
-                  <b>{t("rank.you", { v: format[metric](value) })}</b> · {t("rank.median", { v: format[metric](s.p50) })}
+                  <b>{t("rank.you", { v: format[metric](value) })}</b>{takeHome(metric)} · {t("rank.median", { v: format[metric](s.p50) })}
                 </p>
               </>
             ) : (
               <p className="metric-foot">
-                <b>{t("rank.you", { v: format[metric](value) })}</b> · {t("rank.collecting", { n: s.n, min: stats.minGroupSize })}
+                <b>{t("rank.you", { v: format[metric](value) })}</b>{takeHome(metric)} · {t("rank.collecting", { n: s.n, min: stats.minGroupSize })}
               </p>
             )}
           </div>

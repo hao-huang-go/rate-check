@@ -114,9 +114,10 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
     const top = Math.max(1, Math.round(higherShare * 100));
     switch (metric) {
       case "income":
-        return t("rank.top", { n: top });
       case "savings":
-        return t("rank.top", { n: top });
+        // "Top 83%" reads like a good result; below the middle, say how many you're ahead of instead.
+        if (top <= 50) return t("rank.top", { n: top });
+        return t(person && metric === "income" ? "rank.beatsPeople" : "rank.beatsHouseholds", { n: Math.round(lowerShare * 100) });
       case "repayment":
         return t("rank.repaymentRank", { n: Math.round(lowerShare * 100) });
       case "ratio":

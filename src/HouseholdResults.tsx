@@ -73,6 +73,16 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
         </section>
       )}
 
+      <section className="card coffee">
+        <div>
+          <h3>{t("coffee.title")}</h3>
+          <p className="sub">{t("coffee.body")}</p>
+        </div>
+        <a className="secondary" href="https://buymeacoffee.com/tyah0510" target="_blank" rel="noopener noreferrer">
+          {t("coffee.button")}
+        </a>
+      </section>
+
       {analyses.length > 1 && (
         <div className="tabs property-tabs" role="tablist">
           {household.properties.map((p, i) => (
@@ -103,16 +113,6 @@ export function HouseholdResults({ lang, benchmark, household, stats, onShare, s
       )}
 
       <FeedbackCard lang={lang} page="result" startOpen={true} />
-
-      <section className="card coffee">
-        <div>
-          <h3>{t("coffee.title")}</h3>
-          <p className="sub">{t("coffee.body")}</p>
-        </div>
-        <a className="secondary" href="https://buymeacoffee.com/tyah0510" target="_blank" rel="noopener noreferrer">
-          {t("coffee.button")}
-        </a>
-      </section>
 
       <button className="ghost" onClick={onRestart}>
         {t("res.again")}

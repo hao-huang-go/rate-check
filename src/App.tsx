@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, fetchHouseholdStats, fetchParticipantCount, submitHousehold, type HouseholdStats } from "./api";
 import { loadBenchmark, type LoadedBenchmark } from "./benchmark";
+import { CommentsDrawer } from "./CommentsDrawer";
 import { FeedbackCard } from "./FeedbackCard";
 import { householdTotals, type Household } from "./household";
 import { HouseholdResults } from "./HouseholdResults";
@@ -167,6 +168,7 @@ export default function App() {
       )}
 
       {benchmark && <footer>{t("footer", { date: new Date(benchmark.fetchedAt).toLocaleDateString("en-AU") })}</footer>}
+      <CommentsDrawer lang={lang} />
     </main>
   );
 }

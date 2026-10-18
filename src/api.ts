@@ -101,3 +101,39 @@ export async function fetchParticipantCount(): Promise<number | null> {
     return null;
   }
 }
+
+export interface CommentItem {
+  id: string;
+  body: string;
+  nickname: string | null;
+  authorReply: string | null;
+  likes: number;
+  liked: boolean;
+  createdAt: string;
+}
+
+export async function fetchComments(): Promise<CommentItem[]> {
+  const body = await json<{ comments: CommentItem[] }>(await fetch("/api/comments", { headers: { "x-device-id": deviceId() } }));
+  return body.comments;
+}
+
+export async function postComment(text: string, nickname: string): Promise<CommentItem> {
+  const body = await json<{ comment: CommentItem }>(
+    await fetch("/api/comments", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-device-id": deviceId() },
+      body: JSON.stringify({ body: text, nickname: nickname || null }),
+    }),
+  );
+  return body.comment;
+}
+
+export async function toggleCommentLike(id: string): Promise<{ likes: number; liked: boolean }> {
+  return json(
+    await fetch("/api/comment-like", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-device-id": deviceId() },
+      body: JSON.stringify({ id }),
+    }),
+  );
+}

@@ -962,3 +962,231 @@ input[type="range"] {
   padding: 4px 12px;
   font-size: 13px;
 }
+
+/* Comment wall: a tab on the right edge that opens a side panel. */
+.comments-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px calc(12px) 10px;
+  margin-right: env(safe-area-inset-right, 0px);
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: 14px 0 0 14px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: -4px 4px 18px rgba(0, 0, 0, 0.08);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.comments-tab.hidden-tab {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.comments-tab-label {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.1em;
+}
+
+.comments-count {
+  min-width: 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  padding: 1px 6px;
+}
+
+.comments-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 31;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.comments-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 32;
+  width: min(380px, 92vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-left: 1px solid var(--line);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.14);
+  padding: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) 16px;
+  transform: translateX(105%);
+  transition: transform 0.22s ease;
+}
+
+.comments-panel.open {
+  transform: translateX(0);
+}
+
+.comments-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comments-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.comments-close {
+  border: 0;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.comments-sort {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.comments-sort button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.comments-sort button.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.comments-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.comment {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+}
+
+.comment-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.comment-meta b {
+  color: var(--text);
+}
+
+.comment-body {
+  margin: 4px 0 6px;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.comment-reply {
+  margin: 0 0 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.comment-reply b {
+  color: var(--accent);
+}
+
+.comment-like {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.comment-like.on {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.comments-form {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+}
+
+.comments-form textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  resize: none;
+}
+
+.comments-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.comments-form-row input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.comments-form-row .primary {
+  flex: none;
+  width: auto;
+  margin: 0;
+  padding: 8px 18px;
+}

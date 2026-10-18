@@ -3,7 +3,9 @@ import { BALANCE_BANDS, OFFSET_BANDS } from "../src/bands.js";
 import {
   AGE_BANDS,
   EXPERIENCE,
+  estimateNetWorth,
   householdTotals,
+  RENT_BANDS,
   MAX_MEMBERS,
   MAX_PROPERTIES,
   MONTHLY_BANDS,
@@ -72,6 +74,7 @@ function parseProperty(raw: unknown): Property {
     balance: p.balance === null || p.balance === undefined ? null : pick(BALANCE_BANDS, p.balance, "balance"),
     offset: p.offset === null || p.offset === undefined ? null : pick(OFFSET_BANDS, p.offset, "offset"),
     interest: p.interest === null || p.interest === undefined ? null : Math.round(finite(p.interest, 0, 100_000, "interest")),
+    rent: p.rent === null || p.rent === undefined || p.purpose !== "INV" ? null : pick(RENT_BANDS, p.rent, "rent"),
     value: pick(VALUE_BANDS, p.value, "value"),
   };
 }
@@ -95,6 +98,7 @@ export function parseHousehold(body: unknown): Household {
     members,
     properties: b.properties.map(parseProperty),
     savings: parseSavings(b.savings),
+    investments: parseSavings(b.investments),
     source: typeof b.source === "string" && SOURCE_PATTERN.test(b.source) ? b.source : null,
   };
 }
@@ -114,6 +118,9 @@ function toRow(h: Household) {
     interest_total: h.properties.length ? totals.interest : null,
     property_count: h.properties.length,
     savings_band: h.savings,
+    investments_band: h.investments ?? null,
+    rent_total: h.properties.length ? totals.rent : null,
+    net_worth: estimateNetWorth(h),
     source: h.source ?? null,
     member_rows: h.members.map((m, position) => ({
       position,
@@ -132,6 +139,7 @@ function toRow(h: Household) {
       monthly_band: p.monthly,
       balance_band: p.balance,
       offset_band: p.offset ?? null,
+      rent_band: p.rent ?? null,
       lvr_band: propertyLvrBand(p),
     })),
   };
@@ -207,7 +215,7 @@ export interface PeerTable {
 
 export interface HouseholdStats {
   minGroupSize: number;
-  cohorts: Record<"all" | "age" | "group" | "state" | "band", Record<"income" | "repayment" | "ratio" | "interest" | "savings", MetricStats>>;
+  cohorts: Record<"all" | "age" | "group" | "state" | "band", Record<"income" | "repayment" | "ratio" | "interest" | "savings" | "networth", MetricStats>>;
   // Each earning member's own income, ranked against all individuals.
   members: { position: number; cohorts: Record<"all" | "age" | "group" | "state" | "band", MetricStats> }[];
   rates: { position: number; stats: MetricStats }[];

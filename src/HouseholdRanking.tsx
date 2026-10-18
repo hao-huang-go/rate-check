@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { HouseholdStats, MetricStats } from "./api";
-import { householdTotals, roundIncome, SAVINGS_BANDS, type Household } from "./household";
+import { estimateNetWorth, householdTotals, roundIncome, SAVINGS_BANDS, type Household } from "./household";
 import { moneyBand } from "./bandLabels";
 import { aud, pct } from "./format";
 import { translate, type Lang, type MessageKey } from "./i18n";
@@ -14,7 +14,7 @@ interface Props {
 }
 
 type Cohort = "all" | "age" | "group" | "state" | "band";
-type Metric = "income" | "repayment" | "ratio" | "interest" | "savings";
+type Metric = "income" | "repayment" | "ratio" | "interest" | "savings" | "networth";
 
 // Common rule of thumb: repayments under 30% of take-home pay.
 const RATIO_GUIDE = 0.3;
@@ -85,8 +85,10 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
   const mine: Record<Metric, number | null> = {
     income: totals.income,
     repayment: hasLoan ? totals.repayment : null,
-    ratio: hasLoan && totals.incomeAfterTax > 0 ? (totals.repayment * 12) / totals.incomeAfterTax : null,
-    interest: hasLoan && totals.incomeAfterTax > 0 ? (totals.interest * 12) / totals.incomeAfterTax : null,
+    // Rent from investment properties offsets what the household actually pays.
+    ratio: hasLoan && totals.incomeAfterTax > 0 ? (Math.max(0, totals.repayment - totals.rent) * 12) / totals.incomeAfterTax : null,
+    interest: hasLoan && totals.incomeAfterTax > 0 ? (Math.max(0, totals.interest - totals.rent) * 12) / totals.incomeAfterTax : null,
+    networth: estimateNetWorth(household),
     savings: household.savings ? SAVINGS_BANDS.indexOf(household.savings) + 1 : null,
   };
 
@@ -105,6 +107,7 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
     repayment: (v) => aud(v),
     ratio: (v) => pct(v, 0),
     interest: (v) => pct(v, 0),
+    networth: kFormat,
     savings: (v) => moneyBand(SAVINGS_BANDS[Math.min(6, Math.max(0, Math.round(v) - 1))], lang),
   };
 
@@ -115,6 +118,7 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
     switch (metric) {
       case "income":
       case "savings":
+      case "networth":
         // "Top 83%" reads like a good result; below the middle, say how many you're ahead of instead.
         if (top <= 50) return t("rank.top", { n: top });
         return t(person && metric === "income" ? "rank.beatsPeople" : "rank.beatsHouseholds", { n: Math.round(lowerShare * 100) });
@@ -126,7 +130,7 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
     }
   }
 
-  const metrics: Metric[] = ["income", "repayment", "ratio", "interest", "savings"];
+  const metrics: Metric[] = ["income", "repayment", "ratio", "interest", "savings", "networth"];
   // Tax is per person, so take-home is each member's after-tax income summed, not tax on the total.
   const takeHome = (metric: Metric) => {
     if (metric !== "income") return "";
@@ -185,6 +189,10 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
                 ))}
               </div>
             )}
+            {totals.rent > 0 && (metric === "ratio" || metric === "interest") && (
+              <p className="note">{t("rank.rentNote", { v: aud(totals.rent) })}</p>
+            )}
+            {metric === "networth" && <p className="note">{t("rank.networthHow")}</p>}
             {metric === "interest" && (
               <p className="note">
                 {t(household.properties.every((p) => p.interest) ? "rank.interestEntered" : "rank.interestHow", { v: aud(totals.interest) })}

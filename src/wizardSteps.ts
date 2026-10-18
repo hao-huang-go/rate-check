@@ -1,6 +1,6 @@
 import type { BalanceBand, OffsetBand } from "./bands";
 import type { Purpose, RateKind, Repayment, Residency } from "./compare";
-import type { AgeBand, AuState, Experience, Household, MonthlyBand, Role, SavingsBand, ValueBand } from "./household";
+import type { AgeBand, AuState, Experience, Household, MonthlyBand, RentBand, Role, SavingsBand, ValueBand } from "./household";
 import { grossFromAfterTax } from "./tax";
 
 export interface DraftMember {
@@ -23,6 +23,7 @@ export interface DraftProperty {
   balanceUnknown: boolean;
   offset: OffsetBand | null;
   interest: string; // as typed, AUD/month; blank to use the estimate
+  rent?: RentBand | null; // investment properties only; optional
   value: ValueBand | null;
 }
 
@@ -35,6 +36,8 @@ export interface Draft {
   properties: DraftProperty[];
   savings: SavingsBand | null;
   savingsSkipped: boolean;
+  investments?: SavingsBand | null;
+  investmentsSkipped?: boolean;
 }
 
 export type Step =
@@ -49,6 +52,7 @@ export type Step =
   | { kind: "propertyAmounts"; property: number }
   | { kind: "moreProperties" }
   | { kind: "savings" }
+  | { kind: "investments" }
   | { kind: "review" };
 
 export const newMember = (role: Role): DraftMember => ({
@@ -101,7 +105,7 @@ export function stepsFor(draft: Draft): Step[] {
     );
   });
   if (draft.properties.length) steps.push({ kind: "moreProperties" });
-  steps.push({ kind: "savings" }, { kind: "review" });
+  steps.push({ kind: "savings" }, { kind: "investments" }, { kind: "review" });
   return steps;
 }
 
@@ -136,6 +140,8 @@ export function stepComplete(draft: Draft, step: Step): boolean {
     }
     case "savings":
       return draft.savings !== null || draft.savingsSkipped;
+    case "investments":
+      return (draft.investments ?? null) !== null || draft.investmentsSkipped === true;
     default:
       return true;
   }
@@ -170,9 +176,11 @@ export function toHousehold(draft: Draft): Household {
           balance: p.balanceUnknown ? null : p.balance,
           offset: p.offset ?? null,
           interest: parseNumber(p.interest ?? "") || null,
+          rent: p.purpose === "INV" ? (p.rent ?? null) : null,
           value: p.value!,
         }))
       : [],
     savings: draft.savingsSkipped ? null : draft.savings,
+    investments: draft.investmentsSkipped ? null : (draft.investments ?? null),
   };
 }

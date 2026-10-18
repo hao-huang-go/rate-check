@@ -65,7 +65,7 @@ export interface PeerTable {
 
 export interface HouseholdStats {
   minGroupSize: number;
-  cohorts: Record<"all" | "age" | "group" | "state" | "band", Record<"income" | "repayment" | "ratio" | "interest" | "savings", MetricStats>>;
+  cohorts: Record<"all" | "age" | "group" | "state" | "band", Record<"income" | "repayment" | "ratio" | "interest" | "savings" | "networth", MetricStats>>;
   // Each earning member's own income, ranked against all individuals.
   members: { position: number; cohorts: Record<"all" | "age" | "group" | "state" | "band", MetricStats> }[];
   rates: { position: number; stats: MetricStats }[];

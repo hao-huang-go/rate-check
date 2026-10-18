@@ -21,3 +21,12 @@ export function yearsBand(band: string, lang: Lang): string {
   if (lo === "0") return lang === "zh" ? `不到 ${hi} 年` : `Under ${hi} year${hi === "1" ? "" : "s"}`;
   return lang === "zh" ? `${lo}–${hi} 年` : `${lo}–${hi} years`;
 }
+
+// "400-500" -> "$400–500/周" / "$400–500/wk"; "1000+" -> "$1000+/周".
+export function weeklyBand(band: string, lang: Lang): string {
+  const unit = lang === "zh" ? "/周" : "/wk";
+  if (band.endsWith("+")) return `$${band.slice(0, -1)}+${unit}`;
+  const [lo, hi] = band.split("-");
+  if (lo === "0") return lang === "zh" ? `$${hi}/周以下` : `Under $${hi}/wk`;
+  return `$${lo}–${hi}${unit}`;
+}

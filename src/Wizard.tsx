@@ -1,21 +1,10 @@
 import { useEffect, useState } from "react";
 import { BALANCE_BANDS, OFFSET_BANDS } from "./bands";
-import { moneyBand, yearsBand } from "./bandLabels";
+import { moneyBand, weeklyBand, yearsBand } from "./bandLabels";
 import type { Lender } from "./benchmark";
 import type { RateKind } from "./compare";
 import { groupAmount } from "./format";
-import {
-  AGE_BANDS,
-  EXPERIENCE,
-  MAX_MEMBERS,
-  MAX_PROPERTIES,
-  MONTHLY_BANDS,
-  SAVINGS_BANDS,
-  STATES,
-  VALUE_BANDS,
-  type Household,
-  type Role,
-} from "./household";
+import { AGE_BANDS, EXPERIENCE, MAX_MEMBERS, MAX_PROPERTIES, MONTHLY_BANDS, RENT_BANDS, SAVINGS_BANDS, STATES, VALUE_BANDS, type Household, type Role } from "./household";
 import { translate, type Lang, type MessageKey } from "./i18n";
 import { groupName, loadOccupations, searchOccupations, type OccupationData } from "./occupations";
 import { SearchSelect, type SearchOption } from "./SearchSelect";
@@ -440,6 +429,17 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
               />
             </div>
             <p className="note">{t("wz.prop.interestHint")}</p>
+            {p.purpose === "INV" && (
+              <>
+                <p className="wz-label">{t("wz.prop.rent")}</p>
+                <Choices
+                  value={p.rent ?? null}
+                  onPick={(rent) => updateProperty(s.property, { rent: p.rent === rent ? null : rent })}
+                  options={RENT_BANDS.map((v) => ({ value: v, label: weeklyBand(v, lang) }))}
+                />
+                <p className="note">{t("wz.prop.rentHint")}</p>
+              </>
+            )}
             <p className="wz-label">{t("propertyValue")}</p>
             <Choices value={p.value} onPick={(value) => updateProperty(s.property, { value })} options={VALUE_BANDS.map((v) => ({ value: v, label: moneyBand(v, lang) }))} />
           </>
@@ -492,6 +492,23 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
           </>
         );
 
+      case "investments":
+        return (
+          <>
+            <h2>{t("wz.investments.title")}</h2>
+            <p className="wz-hint">{t("wz.investments.hint")}</p>
+            <Choices
+              columns
+              value={draft.investments ?? null}
+              options={SAVINGS_BANDS.map((v) => ({ value: v, label: moneyBand(v, lang) }))}
+              onPick={(investments) => pickAndAdvance(() => ({ ...draft, investments, investmentsSkipped: false }))}
+            />
+            <button type="button" className="ghost" onClick={() => pickAndAdvance(() => ({ ...draft, investments: null, investmentsSkipped: true }))}>
+              {t("wz.savings.skip")}
+            </button>
+          </>
+        );
+
       case "review": {
         const household = toHousehold(draft);
         return (
@@ -519,6 +536,12 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
                   <b>{t("wz.review.savings")}</b> · {household.savings ? moneyBand(household.savings, lang) : t("wz.review.skipped")}
                 </span>
               </li>
+              <li>
+                <span>
+                  <b>{t("wz.review.investments")}</b> ·{" "}
+                  {household.investments ? moneyBand(household.investments, lang) : t("wz.review.skipped")}
+                </span>
+              </li>
             </ul>
             {error && <p className="error">{error}</p>}
             <button className="primary" disabled={busy} onClick={() => onFinish(household, true)}>
@@ -536,7 +559,7 @@ export function Wizard({ lang, lenders, draft, onChange, onFinish, busy, error }
     }
   }
 
-  const showContinue = !["experience", "moreMembers", "hasProperty", "moreProperties", "savings", "review"].includes(step.kind);
+  const showContinue = !["experience", "moreMembers", "hasProperty", "moreProperties", "savings", "investments", "review"].includes(step.kind);
 
   return (
     <div className="wizard card">

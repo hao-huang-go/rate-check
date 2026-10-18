@@ -40,6 +40,18 @@ export const VALUE_MIDPOINT: Record<ValueBand, number> = {
 export const SAVINGS_BANDS = ["0-10k", "10k-50k", "50k-100k", "100k-200k", "200k-500k", "500k-1m", "1m+"] as const;
 export type SavingsBand = (typeof SAVINGS_BANDS)[number];
 
+export const SAVINGS_MIDPOINT: Record<SavingsBand, number> = {
+  "0-10k": 5_000, "10k-50k": 30_000, "50k-100k": 75_000, "100k-200k": 150_000, "200k-500k": 350_000, "500k-1m": 750_000, "1m+": 1_500_000,
+};
+
+// Weekly rent for an investment property, as Australians quote it.
+export const RENT_BANDS = ["0-400", "400-500", "500-600", "600-700", "700-800", "800-1000", "1000+"] as const;
+export type RentBand = (typeof RENT_BANDS)[number];
+const RENT_WEEKLY_MIDPOINT: Record<RentBand, number> = {
+  "0-400": 300, "400-500": 450, "500-600": 550, "600-700": 650, "700-800": 750, "800-1000": 900, "1000+": 1150,
+};
+export const rentMonthly = (band: RentBand) => Math.round((RENT_WEEKLY_MIDPOINT[band] * 52) / 12);
+
 export const INCOME_ROUNDING = 5_000;
 export const MAX_MEMBERS = 6;
 export const MAX_PROPERTIES = 10;
@@ -61,6 +73,7 @@ export interface Property {
   balance: BalanceBand | null; // null when the borrower doesn't know it
   offset?: OffsetBand | null; // null or missing when not answered, counted as no offset
   interest?: number | null; // AUD/month as the borrower entered it; estimated when missing
+  rent?: RentBand | null; // weekly rent received, investment properties only
   value: ValueBand;
 }
 
@@ -71,6 +84,7 @@ export interface Household {
   members: Member[];
   properties: Property[];
   savings: SavingsBand | null;
+  investments?: SavingsBand | null; // shares, funds etc. outside super
   source?: string | null; // where the visitor came from, e.g. "reddit", "direct"
 }
 
@@ -108,8 +122,18 @@ export function propertyLvrBand(p: LvrInput): LvrBand {
   return lvrBand(Math.min(propertyLvr(p), 0.95)) ?? "90-95";
 }
 
+// Property equity plus savings and other investments, from range midpoints. Null when there's nothing
+// to estimate from (no property and neither savings nor investments answered).
+export function estimateNetWorth(h: Pick<Household, "properties" | "savings" | "investments">): number | null {
+  if (!h.properties.length && !h.savings && !h.investments) return null;
+  const equity = h.properties.reduce((sum, p) => sum + VALUE_MIDPOINT[p.value] - propertyBalance(p), 0);
+  const liquid = (h.savings ? SAVINGS_MIDPOINT[h.savings] : 0) + (h.investments ? SAVINGS_MIDPOINT[h.investments] : 0);
+  return Math.round((equity + liquid) / 10_000) * 10_000;
+}
+
 export function householdTotals(h: Pick<Household, "members" | "properties">) {
   return {
+    rent: h.properties.reduce((sum, p) => sum + (p.purpose === "INV" && p.rent ? rentMonthly(p.rent) : 0), 0),
     income: h.members.reduce((sum, m) => sum + roundIncome(m.income), 0),
     incomeAfterTax: Math.round(h.members.reduce((sum, m) => sum + afterTax(roundIncome(m.income)), 0)),
     repayment: h.properties.reduce((sum, p) => sum + MONTHLY_MIDPOINT[p.monthly], 0),

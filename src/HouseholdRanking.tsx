@@ -130,6 +130,15 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
     }
   }
 
+  // Position among the cohort: 1 is the highest income/savings/net worth, or the lightest repayment or
+  // interest pressure. Ties share a position. Total repayments has no better direction, so no position.
+  function position(metric: Metric, s: Required<MetricStats>): string | null {
+    if (metric === "repayment") return null;
+    const lowerIsBetter = metric === "ratio" || metric === "interest";
+    const place = lowerIsBetter ? s.below + 1 : s.n - s.below - s.ties + 1;
+    return t(person && metric === "income" ? "rank.placePeople" : "rank.placeHouseholds", { place, n: s.n });
+  }
+
   const metrics: Metric[] = ["income", "repayment", "ratio", "interest", "savings", "networth"];
   // Tax is per person, so take-home is each member's after-tax income summed, not tax on the total.
   const takeHome = (metric: Metric) => {
@@ -172,7 +181,12 @@ export function HouseholdRanking({ lang, household, stats, groupLabel }: Props) 
           <div key={metric} className="metric">
             <div className="metric-head">
               <span className="metric-title">{t(individual ? "rank.incomePerson" : `rank.${metric}`)}</span>
-              {ready(s) && <span className="metric-rank">{headline(metric, s)}</span>}
+              {ready(s) && (
+                <span className="metric-rank">
+                  {headline(metric, s)}
+                  {position(metric, s) && <small className="metric-place">{position(metric, s)}</small>}
+                </span>
+              )}
             </div>
             {metric === "income" && earners.length > 1 && (
               <div className="segmented earner-switch" role="group" aria-label={t("rank.incomeWho")}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError, fetchHouseholdStats, fetchParticipantCount, submitHousehold, type HouseholdStats } from "./api";
+import { ApiError, fetchHouseholdStats, fetchParticipantCount, submitHousehold, type HouseholdStats, type Participants } from "./api";
 import { loadBenchmark, type LoadedBenchmark } from "./benchmark";
 import { CommentsDrawer } from "./CommentsDrawer";
 import { FeedbackCard } from "./FeedbackCard";
@@ -26,7 +26,7 @@ export default function App() {
   const [restoring, setRestoring] = useState(() => loadSavedHousehold() !== null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [participants, setParticipants] = useState<number | null>(null);
+  const [participants, setParticipants] = useState<Participants | null>(null);
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
 
   useEffect(() => {
@@ -112,7 +112,9 @@ export default function App() {
         <div>
           <h1>{t("title")}</h1>
           <p className="subtitle">{t("subtitle")}</p>
-          {!!participants && <p className="participants">{t("participants", { n: participants })}</p>}
+          {!!participants?.households && (
+            <p className="participants">{t("participants", { n: participants.households, people: participants.people })}</p>
+          )}
         </div>
         <button
           className="lang"

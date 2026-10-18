@@ -91,12 +91,17 @@ export async function fetchHouseholdStats(id: string): Promise<HouseholdResult> 
   return json(await fetch(`/api/household?id=${encodeURIComponent(id)}`));
 }
 
-export async function fetchParticipantCount(): Promise<number | null> {
+export interface Participants {
+  households: number;
+  people: number;
+}
+
+export async function fetchParticipantCount(): Promise<Participants | null> {
   try {
     const res = await fetch("/api/participants");
     if (!res.ok) return null;
-    const body = (await res.json()) as { households?: unknown };
-    return typeof body.households === "number" ? body.households : null;
+    const body = (await res.json()) as Partial<Participants>;
+    return typeof body.households === "number" ? { households: body.households, people: body.people ?? body.households } : null;
   } catch {
     return null;
   }
